@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CarCare - Сканер авто</title>
+
+  <!-- Стилі -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- PWA конфігурація -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+<!-- ВАШ КОНТЕНТ -->
+<div id="app">
+  <h1>🚗 CarCare</h1>
+
+  <!-- Елементи для сканування -->
+  <div id="reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+  <button id="startScanBtn">📷 Сканувати QR-код</button>
+  <div id="result"></div>
+</div>
+
+<!-- ПІДКЛЮЧЕННЯ СКРИПТІВ -->
+<!-- Спочатку бібліотека -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<!-- ПОТІМ ваш код (він має бути ОСТАННІМ!) -->
+<script src="js/app.js"></script>
+</body>
+</html>
