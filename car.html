@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Інформація про авто</title>
+  <title>Інформація про установку</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -27,7 +27,14 @@
     .back-btn {
       background: #e0e0e0;
       color: #333;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
       margin-bottom: 15px;
+      font-size: 16px;
+      text-decoration: none;
+      display: inline-block;
     }
     .back-btn:hover {
       background: #d0d0d0;
@@ -46,21 +53,34 @@
       gap: 10px;
       align-items: center;
       margin-top: 10px;
+      flex-wrap: wrap;
     }
     .filter-section .date-input input {
       flex: 1;
       padding: 10px;
       border: 2px solid #ddd;
       border-radius: 8px;
+      min-width: 150px;
+    }
+    .filter-section .date-input input:focus {
+      outline: none;
+      border-color: #667eea;
     }
     .filter-section .date-input button {
       flex: 0 0 auto;
       padding: 10px 20px;
       width: auto;
       background: #48bb78;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
     }
     .filter-section .date-input button:hover {
       background: #38a169;
+      transform: translateY(-2px);
     }
     .status-badge {
       display: inline-block;
@@ -92,69 +112,142 @@
     .success-msg.show {
       display: block;
     }
+    .loading {
+      text-align: center;
+      padding: 40px 0;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .error-box {
+      text-align: center;
+      padding: 40px 0;
+      color: #c33;
+    }
+    .error-box .icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 600px) {
+      .filter-section .date-input {
+        flex-direction: column;
+      }
+      .filter-section .date-input button {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
-<div id="app">
+<div id="app" style="max-width:600px;margin:0 auto;padding:20px;">
   <button onclick="location.href='index.html'" class="back-btn">← На головну</button>
-  <h1>🚗 Інформація про авто</h1>
+  <h1>🔧 Інформація про установку</h1>
 
   <div id="carInfo" class="car-details">
-    <p>Завантаження...</p>
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Завантаження...</p>
+    </div>
   </div>
 </div>
 
-<script src="js/app.js"></script>
 <script>
-  // Отримуємо VIN з URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const vin = urlParams.get('vin');
-
-  if (vin) {
-    const car = getCarData(vin);
-    if (car) {
-      displayCarInfoFull(vin, car);
-    } else {
-      document.getElementById('carInfo').innerHTML = `
-                <p style="text-align:center;color:#c33;padding:20px;">
-                    ❌ Автомобіль з VIN ${vin} не знайдено
-                </p>
-            `;
+  // ============================================
+  // РОБОТА З ДАНИМИ (дублюємо тут для надійності)
+  // ============================================
+  function getInstallations() {
+    try {
+      const data = localStorage.getItem('installations');
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
     }
-  } else {
-    document.getElementById('carInfo').innerHTML = `
-            <p style="text-align:center;color:#666;padding:20px;">
-                ❓ VIN не вказано
-            </p>
-        `;
   }
 
-  function displayCarInfoFull(vin, car) {
-    const filterStatus = getFilterStatus(car.airFilter);
+  function getInstallation(id) {
+    const installations = getInstallations();
+    return installations.find(inst => inst.id === id) || null;
+  }
 
-    document.getElementById('carInfo').innerHTML = `
+  function saveInstallations(installations) {
+    localStorage.setItem('installations', JSON.stringify(installations));
+  }
+
+  // ============================================
+  // ОТРИМУЄМО ID З URL
+  // ============================================
+  const urlParams = new URLSearchParams(window.location.search);
+  const id = urlParams.get('id') || urlParams.get('vin');
+
+  console.log('📌 ID з URL:', id);
+
+  // ============================================
+  // ГОЛОВНА ФУНКЦІЯ ВІДОБРАЖЕННЯ
+  // ============================================
+  function displayCarInfo(id, installation) {
+    const container = document.getElementById('carInfo');
+
+    if (!installation) {
+      container.innerHTML = `
+                <div class="error-box">
+                    <div class="icon">❌</div>
+                    <h2>Установку не знайдено</h2>
+                    <p style="color:#666;margin-top:10px;">Перевірте правильність ID</p>
+                    <button onclick="location.href='index.html'" class="back-btn" style="margin-top:20px;">← На головну</button>
+                </div>
+            `;
+      return;
+    }
+
+    console.log('📊 Дані установки:', installation);
+
+    const filterStatus = getFilterStatus(installation.filterDate);
+
+    container.innerHTML = `
             <div class="field">
-                <span class="label">VIN-код</span>
-                <span class="value">${vin}</span>
+                <span class="label">ID установки</span>
+                <span class="value">${installation.id}</span>
+            </div>
+            <div class="field">
+                <span class="label">Назва</span>
+                <span class="value">${installation.name || 'Невідомо'}</span>
             </div>
             <div class="field">
                 <span class="label">Модель</span>
-                <span class="value">${car.model || 'Невідомо'}</span>
+                <span class="value">${installation.model || 'Невідомо'}</span>
             </div>
             <div class="field">
                 <span class="label">Рік випуску</span>
-                <span class="value">${car.year || 'Невідомо'}</span>
+                <span class="value">${installation.year || 'Невідомо'}</span>
             </div>
             <div class="field">
-                <span class="label">Остання заміна масла</span>
-                <span class="value">${formatDate(car.oilChange)}</span>
+                <span class="label">Серійний номер</span>
+                <span class="value">${installation.serial || '—'}</span>
+            </div>
+            <div class="field">
+                <span class="label">Розташування</span>
+                <span class="value">${installation.location || '—'}</span>
+            </div>
+            <div class="field">
+                <span class="label">Дата створення</span>
+                <span class="value">${formatDate(installation.createdAt)}</span>
             </div>
 
             <div class="filter-section">
-                <h3>🔧 Повітряний фільтр</h3>
+                <h3>🔄 Заміна фільтра</h3>
                 <div class="field">
-                    <span class="label">Дата заміни</span>
-                    <span class="value">${formatDate(car.airFilter)}</span>
+                    <span class="label">Поточна дата заміни</span>
+                    <span class="value" id="filterDateDisplay">${installation.filterDate ? formatDate(installation.filterDate) : 'Не встановлено'}</span>
                 </div>
                 <div class="field">
                     <span class="label">Статус</span>
@@ -162,31 +255,73 @@
                 </div>
 
                 <div class="date-input">
-                    <input type="date" id="newFilterDate" value="${car.airFilter || ''}">
-                    <button onclick="updateFilterDate('${vin}')">🔄 Оновити</button>
+                    <input type="date" id="newFilterDate" value="${installation.filterDate || ''}">
+                    <button onclick="updateFilterDate('${installation.id}')">🔄 Оновити дату</button>
                 </div>
                 <div id="updateMsg" class="success-msg">✅ Дату заміни оновлено!</div>
             </div>
 
-            <div class="filter-section">
-                <h3>⛽ Паливний фільтр</h3>
-                <div class="field">
-                    <span class="label">Дата заміни</span>
-                    <span class="value">${formatDate(car.fuelFilter)}</span>
-                </div>
-                <div class="date-input">
-                    <input type="date" id="newFuelFilterDate" value="${car.fuelFilter || ''}">
-                    <button onclick="updateFuelFilterDate('${vin}')">🔄 Оновити</button>
-                </div>
-                <div id="updateFuelMsg" class="success-msg">✅ Дату заміни оновлено!</div>
+            <div style="margin-top:20px;text-align:center;">
+                <button onclick="location.href='index.html'" class="back-btn" style="display:inline-block;">← На головну</button>
             </div>
         `;
   }
 
+  // ============================================
+  // ОНОВЛЕННЯ ДАТИ ЗАМІНИ
+  // ============================================
+  function updateFilterDate(installationId) {
+    if (!installationId) return;
+
+    const newDate = document.getElementById('newFilterDate').value;
+    if (!newDate) {
+      alert('Будь ласка, виберіть дату');
+      return;
+    }
+
+    const installations = getInstallations();
+    const index = installations.findIndex(inst => inst.id === installationId);
+
+    if (index === -1) {
+      alert('Установку не знайдено');
+      return;
+    }
+
+    // Оновлюємо дату
+    installations[index].filterDate = newDate;
+    installations[index].lastUpdate = new Date().toISOString();
+
+    // Додаємо в історію
+    if (!installations[index].history) {
+      installations[index].history = [];
+    }
+    installations[index].history.push({
+      date: newDate,
+      updatedAt: new Date().toISOString()
+    });
+
+    saveInstallations(installations);
+
+    // Показуємо повідомлення
+    const msg = document.getElementById('updateMsg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 3000);
+
+    // Оновлюємо відображення
+    displayCarInfo(installationId, installations[index]);
+  }
+
+  // ============================================
+  // ДОПОМІЖНІ ФУНКЦІЇ
+  // ============================================
   function formatDate(dateString) {
     if (!dateString) return 'Не вказано';
     const date = new Date(dateString);
-    return date.toLocaleDateString('uk-UA');
+    return date.toLocaleDateString('uk-UA', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   }
 
   function getFilterStatus(filterDate) {
@@ -202,51 +337,37 @@
       return { text: '✅ Актуальний', class: 'status-good' };
     } else if (daysDiff <= 30) {
       return { text: `⚠️ ${daysDiff} днів тому`, class: 'status-warning' };
+    } else if (daysDiff <= 60) {
+      return { text: `🔴 Потрібна заміна (${daysDiff} днів)`, class: 'status-danger' };
     } else {
-      return { text: `🔴 ПОТРІБНА ЗАМІНА (${daysDiff} днів)`, class: 'status-danger' };
+      return { text: `🚨 ТЕРМІНОВО! (${daysDiff} днів)`, class: 'status-danger' };
     }
   }
 
-  function updateFilterDate(vin) {
-    const newDate = document.getElementById('newFilterDate').value;
-    if (!newDate) {
-      alert('Виберіть дату');
+  // ============================================
+  // ІНІЦІАЛІЗАЦІЯ СТОРІНКИ
+  // ============================================
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!id) {
+      document.getElementById('carInfo').innerHTML = `
+                <div class="error-box">
+                    <div class="icon">❓</div>
+                    <h2>ID не вказано</h2>
+                    <p style="color:#666;margin-top:10px;">Будь ласка, відскануйте QR-код</p>
+                    <button onclick="location.href='index.html'" class="back-btn" style="margin-top:20px;">← На головну</button>
+                </div>
+            `;
       return;
     }
 
-    const car = getCarData(vin);
-    if (car) {
-      car.airFilter = newDate;
-      saveCarData(vin, car);
+    const installation = getInstallation(id);
+    displayCarInfo(id, installation);
+  });
 
-      const msg = document.getElementById('updateMsg');
-      msg.classList.add('show');
-      setTimeout(() => msg.classList.remove('show'), 3000);
-
-      // Оновлюємо сторінку
-      displayCarInfoFull(vin, car);
-    }
-  }
-
-  function updateFuelFilterDate(vin) {
-    const newDate = document.getElementById('newFuelFilterDate').value;
-    if (!newDate) {
-      alert('Виберіть дату');
-      return;
-    }
-
-    const car = getCarData(vin);
-    if (car) {
-      car.fuelFilter = newDate;
-      saveCarData(vin, car);
-
-      const msg = document.getElementById('updateFuelMsg');
-      msg.classList.add('show');
-      setTimeout(() => msg.classList.remove('show'), 3000);
-
-      displayCarInfoFull(vin, car);
-    }
-  }
+  // Експортуємо функції для використання в HTML
+  window.updateFilterDate = updateFilterDate;
+  window.getInstallation = getInstallation;
+  window.getInstallations = getInstallations;
 </script>
 </body>
 </html>
