@@ -14,10 +14,8 @@ if ('serviceWorker' in navigator) {
 }
 
 // ============================================
-// РОБОТА З ДАНИМИ (ОДИНА ОСНОВНА СИСТЕМА)
+// РОБОТА З ДАНИМИ
 // ============================================
-
-// Отримати всі установки (машини)
 function getInstallations() {
   try {
     const data = localStorage.getItem('installations');
@@ -27,89 +25,44 @@ function getInstallations() {
   }
 }
 
-// Зберегти всі установки
-function saveInstallations(installations) {
-  localStorage.setItem('installations', JSON.stringify(installations));
-}
-
-// Отримати одну установку за ID
 function getInstallation(id) {
   const installations = getInstallations();
   return installations.find(inst => inst.id === id) || null;
 }
 
-// Додати або оновити установку
-function saveInstallation(installation) {
-  const installations = getInstallations();
-  const index = installations.findIndex(inst => inst.id === installation.id);
-
-  if (index !== -1) {
-    installations[index] = installation;
-  } else {
-    installations.push(installation);
-  }
-
-  saveInstallations(installations);
-  return installation;
-}
-
-// Видалити установку
-function deleteInstallation(id) {
-  let installations = getInstallations();
-  installations = installations.filter(inst => inst.id !== id);
-  saveInstallations(installations);
-}
-
-// ============================================
-// СТАРІ ФУНКЦІЇ ДЛЯ СУМІСНОСТІ (cars)
-// ============================================
-
-// Отримати дані про машину (використовуємо ту ж базу)
-function getCarData(vin) {
-  return getInstallation(vin);
-}
-
-// Зберегти дані про машину
-function saveCarData(vin, data) {
-  const existing = getInstallation(vin);
-  const installation = {
-    id: vin,
-    name: data.model || 'Невідома модель',
-    model: data.model || 'Невідомо',
-    year: data.year || 'Невідомо',
-    oilChange: data.oilChange || '',
-    airFilter: data.airFilter || '',
-    fuelFilter: data.fuelFilter || '',
-    filterDate: data.airFilter || data.filterDate || '',
-    createdAt: existing?.createdAt || new Date().toISOString()
-  };
-  saveInstallation(installation);
-  return installation;
-}
-
 // ============================================
 // ФУНКЦІЇ СКАНУВАННЯ
 // ============================================
-
 function startScanner() {
-  const readerElement = document.getElementById('reader');
+  console.log('▶️ Запуск сканера...');
 
+  // Отримуємо елементи з перевіркою
+  const readerElement = document.getElementById('reader');
+  const startBtn = document.getElementById('startScanBtn');
+  const stopBtn = document.getElementById('stopScanBtn');
+
+  // ПЕРЕВІРКА: чи існує reader
   if (!readerElement) {
     showResult('Помилка: елемент сканера не знайдено', 'error');
+    console.error('❌ Елемент #reader не знайдено!');
     return;
   }
 
+  // ПЕРЕВІРКА: чи підтримує браузер камеру
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showResult('Ваш браузер не підтримує камеру', 'error');
+    console.error('❌ Браузер не підтримує камеру');
     return;
   }
 
+  // Якщо вже скануємо - зупиняємо
   if (html5QrCode && isScanning) {
     stopScanner();
     return;
   }
 
   try {
+    // Створюємо сканер
     html5QrCode = new Html5Qrcode("reader");
 
     const config = {
@@ -118,6 +71,7 @@ function startScanner() {
       aspectRatio: 1.0
     };
 
+    // Запускаємо сканування
     html5QrCode.start(
       { facingMode: "environment" },
       config,
@@ -125,48 +79,86 @@ function startScanner() {
       onScanError
     ).then(() => {
       isScanning = true;
-      document.getElementById('startScanBtn').textContent = '⏹ Зупинити';
-      document.getElementById('startScanBtn').style.display = 'none';
-      document.getElementById('stopScanBtn').style.display = 'inline-flex';
-      showResult('📷 Сканування запущено...', 'success');
+
+      // Оновлюємо кнопки (з перевіркою)
+      if (startBtn) {
+        startBtn.textContent = '⏹ Зупинити';
+        startBtn.style.display = 'none';
+      }
+      if (stopBtn) {
+        stopBtn.style.display = 'inline-flex';
+      }
+
+      showResult('📷 Сканування запущено... Наведіть камеру на QR-код', 'success');
+      console.log('✅ Сканування запущено!');
     }).catch(err => {
-      console.error('Помилка запуску:', err);
+      console.error('❌ Помилка запуску камери:', err);
       showResult('Помилка камери: ' + err.message, 'error');
+
+      // Повертаємо кнопки (з перевіркою)
+      if (startBtn) {
+        startBtn.textContent = '📷 Сканувати QR-код';
+        startBtn.style.display = 'inline-flex';
+      }
+      if (stopBtn) {
+        stopBtn.style.display = 'none';
+      }
     });
   } catch (error) {
-    console.error('Помилка створення сканера:', error);
+    console.error('❌ Помилка створення сканера:', error);
     showResult('Помилка: ' + error.message, 'error');
   }
 }
 
 function stopScanner() {
+  console.log('⏹ Зупинка сканера...');
+
+  const startBtn = document.getElementById('startScanBtn');
+  const stopBtn = document.getElementById('stopScanBtn');
+
   if (html5QrCode && isScanning) {
     html5QrCode.stop().then(() => {
       isScanning = false;
-      document.getElementById('startScanBtn').textContent = '📷 Сканувати QR-код';
-      document.getElementById('startScanBtn').style.display = 'inline-flex';
-      document.getElementById('stopScanBtn').style.display = 'none';
+
+      // Оновлюємо кнопки (з перевіркою)
+      if (startBtn) {
+        startBtn.textContent = '📷 Сканувати QR-код';
+        startBtn.style.display = 'inline-flex';
+      }
+      if (stopBtn) {
+        stopBtn.style.display = 'none';
+      }
+
       showResult('⏹ Сканування зупинено', 'success');
+      console.log('✅ Сканування зупинено');
     }).catch(err => {
-      console.error('Помилка зупинки:', err);
+      console.error('❌ Помилка зупинки сканера:', err);
     });
+  } else {
+    // Якщо сканер не активний - просто оновлюємо кнопки
+    if (startBtn) {
+      startBtn.textContent = '📷 Сканувати QR-код';
+      startBtn.style.display = 'inline-flex';
+    }
+    if (stopBtn) {
+      stopBtn.style.display = 'none';
+    }
   }
 }
 
 // ============================================
 // ОБРОБКА РЕЗУЛЬТАТІВ СКАНУВАННЯ
 // ============================================
-
 function onScanSuccess(decodedText, decodedResult) {
   console.log('✅ QR-код знайдено:', decodedText);
 
   // Зупиняємо сканування
   stopScanner();
 
-  // Показуємо що знайшли
+  // Показуємо результат
   showResult(`✅ Відскановано: ${decodedText}`, 'success');
 
-  // Шукаємо в базі
+  // Перевіряємо чи є установка в базі
   const installation = getInstallation(decodedText);
 
   if (installation) {
@@ -175,7 +167,7 @@ function onScanSuccess(decodedText, decodedResult) {
       window.location.href = `car.html?id=${encodeURIComponent(decodedText)}`;
     }, 1500);
   } else {
-    // Якщо немає - пропонуємо додати
+    // Якщо немає - показуємо форму додавання
     setTimeout(() => {
       showAddCarForm(decodedText);
     }, 1500);
@@ -183,16 +175,42 @@ function onScanSuccess(decodedText, decodedResult) {
 }
 
 function onScanError(errorMessage) {
-  // Ігноруємо - це нормально
+  // Ігноруємо помилки сканування (вони постійні)
+  // console.log('Помилка сканування:', errorMessage);
 }
 
 // ============================================
-// ВІДОБРАЖЕННЯ ФОРМИ ДЛЯ ДОДАВАННЯ
+// ВІДОБРАЖЕННЯ ПОВІДОМЛЕНЬ
 // ============================================
+function showResult(message, type = 'success') {
+  const resultDiv = document.getElementById('result');
+  if (!resultDiv) {
+    console.warn('⚠️ Елемент #result не знайдено');
+    return;
+  }
 
+  resultDiv.textContent = message;
+  resultDiv.className = 'result-box ' + type;
+  resultDiv.style.display = 'block';
+}
+
+function clearResult() {
+  const resultDiv = document.getElementById('result');
+  if (resultDiv) {
+    resultDiv.style.display = 'none';
+    resultDiv.innerHTML = '';
+  }
+}
+
+// ============================================
+// ФОРМА ДЛЯ ДОДАВАННЯ НОВОЇ УСТАНОВКИ
+// ============================================
 function showAddCarForm(vin) {
   const resultDiv = document.getElementById('result');
-  if (!resultDiv) return;
+  if (!resultDiv) {
+    console.error('❌ Елемент #result не знайдено');
+    return;
+  }
 
   resultDiv.innerHTML = `
         <div style="padding:15px;">
@@ -227,39 +245,49 @@ function showAddCarForm(vin) {
   resultDiv.className = 'result-box warning';
   resultDiv.style.display = 'block';
 
-  document.getElementById('carForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+  const form = document.getElementById('carForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
 
-    const name = document.getElementById('model').value.trim();
-    if (!name) {
-      alert('Будь ласка, введіть назву');
-      return;
-    }
+      const name = document.getElementById('model').value.trim();
+      if (!name) {
+        alert('Будь ласка, введіть назву');
+        return;
+      }
 
-    const data = {
-      model: name,
-      carModel: document.getElementById('carModel').value.trim(),
-      year: document.getElementById('year').value.trim(),
-      airFilter: document.getElementById('airFilter').value,
-      filterDate: document.getElementById('airFilter').value
-    };
+      const installations = getInstallations();
+      const newInstallation = {
+        id: vin,
+        name: name,
+        model: document.getElementById('carModel').value.trim() || '—',
+        year: document.getElementById('year').value.trim() || '—',
+        filterDate: document.getElementById('airFilter').value || '',
+        createdAt: new Date().toISOString()
+      };
 
-    saveCarData(vin, data);
-    showResult(`✅ Установку "${vin}" додано!`, 'success');
+      installations.push(newInstallation);
+      localStorage.setItem('installations', JSON.stringify(installations));
 
-    setTimeout(() => {
-      window.location.href = `car.html?id=${encodeURIComponent(vin)}`;
-    }, 1500);
-  });
+      showResult(`✅ Установку "${vin}" додано!`, 'success');
+
+      setTimeout(() => {
+        window.location.href = `car.html?id=${encodeURIComponent(vin)}`;
+      }, 1500);
+    });
+  }
 }
 
 // ============================================
 // РУЧНЕ ВВЕДЕННЯ
 // ============================================
-
 function openInstallationManual() {
   const input = document.getElementById('manualIdInput');
-  if (!input) return;
+  if (!input) {
+    showResult('Помилка: поле введення не знайдено', 'error');
+    console.error('❌ Елемент #manualIdInput не знайдено');
+    return;
+  }
 
   const id = input.value.trim();
   if (!id) {
@@ -276,58 +304,50 @@ function openInstallationManual() {
 }
 
 // ============================================
-// ВІДОБРАЖЕННЯ ПОВІДОМЛЕНЬ
+// ІНІЦІАЛІЗАЦІЯ ПРИ ЗАВАНТАЖЕННІ
 // ============================================
-
-function showResult(message, type = 'success') {
-  const resultDiv = document.getElementById('result');
-  if (!resultDiv) return;
-
-  resultDiv.textContent = message;
-  resultDiv.className = 'result-box ' + type;
-  resultDiv.style.display = 'block';
-}
-
-function clearResult() {
-  const resultDiv = document.getElementById('result');
-  if (resultDiv) {
-    resultDiv.style.display = 'none';
-    resultDiv.innerHTML = '';
-  }
-}
-
-// ============================================
-// НАВІГАЦІЯ
-// ============================================
-
-function openInstallationPage(id) {
-  if (id) {
-    window.location.href = `car.html?id=${encodeURIComponent(id)}`;
-  }
-}
-
-// ============================================
-// ІНІЦІАЛІЗАЦІЯ
-// ============================================
-
 document.addEventListener('DOMContentLoaded', function() {
   console.log('📱 CarCare PWA завантажено');
 
-  // Кнопки
-  const startBtn = document.getElementById('startScanBtn');
-  const stopBtn = document.getElementById('stopScanBtn');
-  const manualInput = document.getElementById('manualIdInput');
+  // Перевіряємо наявність всіх елементів
+  const elements = {
+    startBtn: document.getElementById('startScanBtn'),
+    stopBtn: document.getElementById('stopScanBtn'),
+    manualInput: document.getElementById('manualIdInput'),
+    reader: document.getElementById('reader'),
+    result: document.getElementById('result')
+  };
 
-  if (startBtn) {
-    startBtn.addEventListener('click', startScanner);
+  console.log('🔍 Перевірка елементів:', {
+    startBtn: !!elements.startBtn,
+    stopBtn: !!elements.stopBtn,
+    manualInput: !!elements.manualInput,
+    reader: !!elements.reader,
+    result: !!elements.result
+  });
+
+  // Якщо якогось елемента немає - показуємо попередження
+  if (!elements.startBtn) {
+    console.error('❌ Кнопка startScanBtn не знайдена! Додайте <button id="startScanBtn">');
+  }
+  if (!elements.stopBtn) {
+    console.error('❌ Кнопка stopScanBtn не знайдена! Додайте <button id="stopScanBtn">');
+  }
+  if (!elements.reader) {
+    console.error('❌ Елемент reader не знайдено! Додайте <div id="reader">');
   }
 
-  if (stopBtn) {
-    stopBtn.addEventListener('click', stopScanner);
+  // Додаємо обробники подій (тільки якщо елементи існують)
+  if (elements.startBtn) {
+    elements.startBtn.addEventListener('click', startScanner);
   }
 
-  if (manualInput) {
-    manualInput.addEventListener('keypress', function(e) {
+  if (elements.stopBtn) {
+    elements.stopBtn.addEventListener('click', stopScanner);
+  }
+
+  if (elements.manualInput) {
+    elements.manualInput.addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         openInstallationManual();
       }
@@ -348,32 +368,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 // ЕКСПОРТ В ГЛОБАЛЬНИЙ ОБ'ЄКТ
 // ============================================
-
 window.startScanner = startScanner;
 window.stopScanner = stopScanner;
 window.openInstallationManual = openInstallationManual;
-window.openInstallationPage = openInstallationPage;
 window.showResult = showResult;
 window.clearResult = clearResult;
 window.getInstallation = getInstallation;
 window.getInstallations = getInstallations;
-window.saveInstallation = saveInstallation;
-window.deleteInstallation = deleteInstallation;
-window.getCarData = getCarData;
-window.saveCarData = saveCarData;
 window.showAddCarForm = showAddCarForm;
-window.generateQRCode = function(vin) {
-  alert(`📱 Генерація QR-коду для ${vin}\nПерейдіть в адмін-панель: /admin.html`);
-};
-window.editCarData = function(vin) {
-  const car = getCarData(vin);
-  if (car) {
-    showAddCarForm(vin);
-    setTimeout(() => {
-      document.getElementById('model').value = car.name || '';
-      document.getElementById('carModel').value = car.model || '';
-      document.getElementById('year').value = car.year || '';
-      document.getElementById('airFilter').value = car.filterDate || '';
-    }, 100);
-  }
-};
