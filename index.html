@@ -1,49 +1,175 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CarCare - Сканер авто</title>
-
-  <!-- Стилі -->
-  <link rel="stylesheet" href="css/style.css">
-
-  <!-- PWA конфігурація -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CarCare</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon.png">
-  <meta name="theme-color" content="#fafafa">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
+    #app { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .header h1 { color: #1a1a2e; }
+    .admin-link { background: #667eea; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 14px; }
+    #reader { width: 100%; max-width: 400px; margin: 0 auto; background: #000; border-radius: 12px; overflow: hidden; min-height: 300px; }
+    #reader video { width: 100% !important; }
+    .controls { display: flex; gap: 10px; justify-content: center; margin: 15px 0; flex-wrap: wrap; }
+    .btn { padding: 12px 24px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: #667eea; color: white; }
+    .btn-secondary { background: #e2e8f0; color: #333; }
+    .manual { margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee; }
+    .manual input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; }
+    .manual input:focus { outline: none; border-color: #667eea; }
+    .manual .row { display: flex; gap: 10px; margin-top: 10px; }
+    .result-box { margin-top: 15px; padding: 15px; border-radius: 10px; display: none; }
+    .result-box.success { display: block; background: #d4edda; color: #155724; }
+    .result-box.error { display: block; background: #f8d7da; color: #721c24; }
+    .result-box.warning { display: block; background: #fff3cd; color: #856404; }
+    .footer { text-align: center; padding: 20px; color: #888; font-size: 13px; margin-top: 20px; }
+  </style>
 </head>
-
 <body>
-<!-- ВАШ КОНТЕНТ -->
 <div id="app">
-  <h1>Lüftungsanlagen</h1>
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div class="header">
     <h1>🚗 CarCare</h1>
-    <a href="admin.html" style="
-        background: #667eea;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.3s;
-    " onmouseover="this.style.background='#5a67d8'" onmouseout="this.style.background='#667eea'">
-      ⚙️ Адмін
-    </a>
+    <a href="admin.html" class="admin-link">⚙️ Адмін</a>
   </div>
-  <!-- Елементи для сканування -->
-  <div id="reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
-  <button id="startScanBtn">📷 Сканувати QR-код</button>
-  <div id="result"></div>
+
+  <div id="reader"></div>
+
+  <div class="controls">
+    <button id="startScanBtn" class="btn btn-primary">📷 Сканувати QR</button>
+    <button id="stopScanBtn" class="btn btn-secondary" style="display:none;">⏹ Зупинити</button>
+  </div>
+
+  <div id="result" class="result-box"></div>
+
+  <div class="manual">
+    <p style="color:#666;margin-bottom:5px;">🔍 Або введіть ID вручну:</p>
+    <div class="row">
+      <input type="text" id="manualIdInput" placeholder="INST-001">
+      <button onclick="openManual()" class="btn btn-primary">Перейти</button>
+    </div>
+  </div>
+
+  <div class="footer">© 2026 CarCare - PWA</div>
 </div>
 
-<!-- ПІДКЛЮЧЕННЯ СКРИПТІВ -->
-<!-- Спочатку бібліотека -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+  // ==================== ДАНІ ====================
+  function getInstallations() {
+    try { return JSON.parse(localStorage.getItem('installations') || '[]'); } catch { return []; }
+  }
 
-<!-- ПОТІМ ваш код (він має бути ОСТАННІМ!) -->
-<script src="js/app.js"></script>
+  function getInstallation(id) {
+    return getInstallations().find(i => i.id === id) || null;
+  }
+
+  // ==================== СКАНЕР ====================
+  let scanner = null;
+  let scanning = false;
+
+  function startScanner() {
+    if (!navigator.mediaDevices) {
+      showResult('Браузер не підтримує камеру', 'error');
+      return;
+    }
+
+    if (scanner && scanning) { stopScanner(); return; }
+
+    try {
+      scanner = new Html5Qrcode("reader");
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 15, qrbox: { width: 250, height: 250 } },
+        onSuccess,
+        onError
+      ).then(() => {
+        scanning = true;
+        document.getElementById('startScanBtn').style.display = 'none';
+        document.getElementById('stopScanBtn').style.display = 'inline-flex';
+        showResult('📷 Сканування запущено...', 'success');
+      });
+    } catch(e) {
+      showResult('Помилка: ' + e.message, 'error');
+    }
+  }
+
+  function stopScanner() {
+    if (scanner && scanning) {
+      scanner.stop().then(() => {
+        scanning = false;
+        document.getElementById('startScanBtn').style.display = 'inline-flex';
+        document.getElementById('stopScanBtn').style.display = 'none';
+        showResult('⏹ Сканування зупинено', 'success');
+      });
+    }
+  }
+
+  function onSuccess(text) {
+    console.log('✅ Відскановано:', text);
+    stopScanner();
+
+    const clean = text.trim();
+    showResult(`✅ Відскановано: ${clean}`, 'success');
+
+    const inst = getInstallation(clean);
+    if (inst) {
+      setTimeout(() => {
+        window.location.href = `car.html?id=${encodeURIComponent(clean)}`;
+      }, 1200);
+    } else {
+      setTimeout(() => {
+        showNotFound(clean);
+      }, 1200);
+    }
+  }
+
+  function onError(err) {}
+
+  function showResult(msg, type) {
+    const el = document.getElementById('result');
+    el.textContent = msg;
+    el.className = 'result-box ' + type;
+  }
+
+  function showNotFound(id) {
+    const el = document.getElementById('result');
+    el.innerHTML = `
+                <strong>⚠️ Установка "${id}" не знайдена</strong><br>
+                <a href="admin.html" style="color:#667eea;">Додати в адмін-панелі</a>
+            `;
+    el.className = 'result-box warning';
+  }
+
+  function openManual() {
+    const id = document.getElementById('manualIdInput').value.trim();
+    if (!id) { showResult('Введіть ID', 'error'); return; }
+
+    const inst = getInstallation(id);
+    if (inst) {
+      window.location.href = `car.html?id=${encodeURIComponent(id)}`;
+    } else {
+      showNotFound(id);
+    }
+  }
+
+  // ==================== КНОПКИ ====================
+  document.getElementById('startScanBtn').addEventListener('click', startScanner);
+  document.getElementById('stopScanBtn').addEventListener('click', stopScanner);
+  document.getElementById('manualIdInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') openManual();
+  });
+
+  // ==================== ПЕРЕВІРКА URL ====================
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id') || params.get('vin');
+  if (id && getInstallation(id)) {
+    window.location.href = `car.html?id=${encodeURIComponent(id)}`;
+  }
+</script>
 </body>
 </html>

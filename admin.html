@@ -2,401 +2,287 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Адмін-панель CarCare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Адмін-панель</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css">
   <style>
-    /* Стилі для адмін-панелі */
-    .admin-container { max-width: 800px; margin: 0 auto; padding: 20px; }
-    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-    .admin-header h1 { margin: 0; font-size: 28px; }
-    .back-btn { background: #667eea; color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 500; transition: all 0.3s; }
-    .back-btn:hover { background: #5a67d8; transform: translateY(-2px); }
-    .admin-section { background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-    .admin-section h2 { margin-top: 0; margin-bottom: 20px; color: #1a1a2e; font-size: 20px; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #333; }
-    .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; transition: border-color 0.3s; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    h1 { color: #1a1a2e; margin-bottom: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .back-btn { background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; }
+    .section { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+    .section h2 { margin-bottom: 15px; font-size: 18px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 4px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; }
     .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
-    .btn { padding: 10px 24px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn { padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.3s; }
+    .btn:hover { transform: translateY(-2px); }
     .btn-primary { background: #667eea; color: white; }
-    .btn-primary:hover { background: #5a67d8; }
     .btn-success { background: #48bb78; color: white; }
-    .btn-success:hover { background: #38a169; }
     .btn-danger { background: #fc8181; color: white; }
-    .btn-danger:hover { background: #f56565; }
     .btn-secondary { background: #e2e8f0; color: #333; }
-    .btn-secondary:hover { background: #cbd5e0; }
-    .btn-sm { padding: 6px 12px; font-size: 13px; }
-    .qr-result { margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: center; display: none; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .qr-result { margin-top: 20px; padding: 20px; background: white; border-radius: 10px; text-align: center; display: none; }
     .qr-result.show { display: block; }
-    #qrCodeContainer { display: flex; justify-content: center; align-items: center; padding: 20px; background: white; border-radius: 10px; margin: 15px 0; min-height: 150px; }
-    #qrCodeContainer img { max-width: 250px; height: auto; }
-    #qrCodeContainer canvas { max-width: 250px; height: auto; }
-    .qr-label { margin-top: 10px; font-size: 16px; font-weight: 600; color: #1a1a2e; }
-    .installations-list { max-height: 400px; overflow-y: auto; }
-    .installation-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #667eea; }
+    #qrCodeContainer { display: flex; justify-content: center; padding: 20px; background: white; border-radius: 10px; }
+    #qrCodeContainer img { max-width: 250px; }
+    .installation-item { display: flex; justify-content: space-between; padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #667eea; }
     .installation-item .info { flex: 1; }
-    .installation-item .info .name { font-weight: 600; font-size: 16px; }
+    .installation-item .info .name { font-weight: 600; }
     .installation-item .info .id { font-size: 13px; color: #666; }
     .installation-item .actions { display: flex; gap: 8px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .test-qr-btn { background: #ed8936; color: white; margin-top: 10px; }
-    .test-qr-btn:hover { background: #dd6b20; }
-    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } .installation-item { flex-direction: column; gap: 10px; align-items: stretch; } .installation-item .actions { justify-content: center; } }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .qr-label { font-weight: 600; margin-top: 10px; color: #1a1a2e; }
+    .test-btn { background: #ed8936; color: white; }
+    .test-btn:hover { background: #dd6b20; }
+    .note { background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ffc107; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-<div class="admin-container">
-  <!-- Хедер -->
-  <div class="admin-header">
+<div class="container">
+  <div class="header">
     <h1>⚙️ Адмін-панель</h1>
     <a href="index.html" class="back-btn">← На головну</a>
   </div>
 
-  <!-- Секція 1: Додавання установки -->
-  <div class="admin-section">
-    <h2>➕ Додати нову установку</h2>
+  <!-- Додавання -->
+  <div class="section">
+    <h2>➕ Додати установку</h2>
     <form id="addForm">
       <div class="grid-2">
         <div class="form-group">
-          <label for="instId">ID установки *</label>
+          <label>ID *</label>
           <input type="text" id="instId" placeholder="INST-001" required>
-          <small style="color:#666;font-size:12px;">Тільки літери, цифри, дефіс, підкреслення</small>
         </div>
         <div class="form-group">
-          <label for="instName">Назва *</label>
-          <input type="text" id="instName" placeholder="Вентиляційна установка №1" required>
+          <label>Назва *</label>
+          <input type="text" id="instName" placeholder="Вентиляційна система" required>
         </div>
         <div class="form-group">
-          <label for="instModel">Модель</label>
-          <input type="text" id="instModel" placeholder="Ventilator Pro 2000">
+          <label>Модель</label>
+          <input type="text" id="instModel" placeholder="Ventilator Pro">
         </div>
         <div class="form-group">
-          <label for="instYear">Рік випуску</label>
+          <label>Рік</label>
           <input type="number" id="instYear" placeholder="2024">
-        </div>
-        <div class="form-group">
-          <label for="instSerial">Серійний номер</label>
-          <input type="text" id="instSerial" placeholder="SN-2024-001">
-        </div>
-        <div class="form-group">
-          <label for="instLocation">Розташування</label>
-          <input type="text" id="instLocation" placeholder="Цех №3, кімната 15">
         </div>
       </div>
       <div class="form-group">
-        <label for="filterDate">Дата останньої заміни фільтра</label>
+        <label>Дата заміни фільтра</label>
         <input type="date" id="filterDate">
       </div>
-      <button type="submit" class="btn btn-primary">➕ Додати установку</button>
+      <button type="submit" class="btn btn-primary">➕ Додати</button>
     </form>
   </div>
 
-  <!-- Секція 2: Генерація QR -->
-  <div class="admin-section">
-    <h2>📱 Генерація QR-коду</h2>
+  <!-- Генерація QR -->
+  <div class="section">
+    <h2>📱 Генерація QR</h2>
+
+    <div class="note">
+      <strong>⚠️ Важливо:</strong> Після створення QR-коду, обов'язково <strong>скачайте</strong> його та
+      <strong>роздрукуйте</strong> в хорошій якості. QR має бути чітким та контрастним.
+    </div>
+
     <div class="form-group">
-      <label for="installSelect">Виберіть установку</label>
+      <label>Виберіть установку</label>
       <select id="installSelect">
-        <option value="">-- Виберіть установку --</option>
+        <option value="">-- Виберіть --</option>
       </select>
     </div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button onclick="generateQR()" class="btn btn-primary">🎯 Згенерувати QR-код</button>
-      <button onclick="generateTestQR()" class="btn test-qr-btn">🧪 Тестовий QR</button>
+      <button onclick="generateQR()" class="btn btn-primary">🎯 Створити QR</button>
+      <button onclick="generateTestQR()" class="btn test-btn">🧪 Тестовий QR</button>
     </div>
 
     <div id="qrResult" class="qr-result">
-      <h3>Ваш QR-код:</h3>
-      <div id="qrCodeContainer">
-        <p style="color:#999;">Тут буде QR-код</p>
-      </div>
+      <h3>QR-код:</h3>
+      <div id="qrCodeContainer"></div>
       <div id="qrLabel" class="qr-label"></div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:15px;">
-        <button onclick="downloadQR()" class="btn btn-success" id="downloadQrBtn" style="display:none;">⬇️ Скачати QR-код</button>
-        <button onclick="printQR()" class="btn btn-secondary" id="printQrBtn" style="display:none;">🖨️ Друк</button>
+        <button onclick="downloadQR()" class="btn btn-success" id="downloadBtn" style="display:none;">⬇️ Скачати</button>
+        <button onclick="printQR()" class="btn btn-secondary" id="printBtn" style="display:none;">🖨️ Друк</button>
       </div>
     </div>
   </div>
 
-  <!-- Секція 3: Список установок -->
-  <div class="admin-section">
-    <h2>📋 Список установок</h2>
-    <div id="installationsList" class="installations-list">
-      <p style="text-align:center;color:#666;padding:20px;">Немає доданих установок</p>
-    </div>
+  <!-- Список -->
+  <div class="section">
+    <h2>📋 Всі установки</h2>
+    <div id="installationsList"></div>
   </div>
 </div>
 
-<!-- Підключаємо бібліотеки -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-
 <script>
-  // =====================================
-  // РОБОТА З ДАНИМИ
-  // =====================================
-
+  // ==================== ДАНІ ====================
   function getInstallations() {
     try {
       const data = localStorage.getItem('installations');
       return data ? JSON.parse(data) : [];
-    } catch (e) {
-      return [];
-    }
+    } catch { return []; }
   }
 
-  function saveInstallations(installations) {
-    localStorage.setItem('installations', JSON.stringify(installations));
+  function saveInstallations(data) {
+    localStorage.setItem('installations', JSON.stringify(data));
   }
 
   function getInstallation(id) {
-    const installations = getInstallations();
-    return installations.find(inst => inst.id === id) || null;
+    return getInstallations().find(i => i.id === id) || null;
   }
 
-  // =====================================
-  // ДОДАВАННЯ УСТАНОВКИ
-  // =====================================
-
+  // ==================== ДОДАВАННЯ ====================
   document.getElementById('addForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
     const id = document.getElementById('instId').value.trim();
     const name = document.getElementById('instName').value.trim();
-    const model = document.getElementById('instModel').value.trim();
-    const year = document.getElementById('instYear').value.trim();
-    const serial = document.getElementById('instSerial').value.trim();
-    const location = document.getElementById('instLocation').value.trim();
-    const filterDate = document.getElementById('filterDate').value;
 
     if (!id || !name) {
-      alert('Будь ласка, заповніть ID та назву');
-      return;
-    }
-
-    // Перевірка на допустимі символи
-    if (!/^[A-Za-z0-9\-_]+$/.test(id)) {
-      alert('ID може містити тільки літери, цифри, дефіс та підкреслення');
+      alert('Заповніть ID та назву');
       return;
     }
 
     if (getInstallation(id)) {
-      alert(`❌ Установка з ID "${id}" вже існує!`);
+      alert(`ID "${id}" вже існує!`);
       return;
     }
 
-    const newInstallation = {
+    const data = getInstallations();
+    data.push({
       id: id,
       name: name,
-      model: model || '—',
-      year: year || '—',
-      serial: serial || '—',
-      location: location || '—',
-      filterDate: filterDate || '',
+      model: document.getElementById('instModel').value.trim() || '—',
+      year: document.getElementById('instYear').value.trim() || '—',
+      filterDate: document.getElementById('filterDate').value || '',
       createdAt: new Date().toISOString()
-    };
+    });
 
-    const installations = getInstallations();
-    installations.push(newInstallation);
-    saveInstallations(installations);
-
-    document.getElementById('addForm').reset();
-    renderInstallations();
+    saveInstallations(data);
+    this.reset();
+    renderList();
     updateSelect();
-
-    alert(`✅ Установку "${id}" додано успішно!`);
+    alert(`✅ Додано: ${id}`);
   });
 
-  // =====================================
-  // ВИДАЛЕННЯ
-  // =====================================
-
-  function deleteInstallation(id) {
-    if (!confirm(`Ви впевнені, що хочете видалити установку ${id}?`)) return;
-
-    let installations = getInstallations();
-    installations = installations.filter(inst => inst.id !== id);
-    saveInstallations(installations);
-
-    renderInstallations();
-    updateSelect();
-    document.getElementById('qrResult').classList.remove('show');
-  }
-
-  // =====================================
-  // ГЕНЕРАЦІЯ QR
-  // =====================================
-
-  let currentQRInstallation = null;
-  let qrCodeInstance = null;
+  // ==================== QR ====================
+  let currentQR = null;
 
   function generateQR() {
-    const select = document.getElementById('installSelect');
-    const id = select.value;
+    const id = document.getElementById('installSelect').value;
+    if (!id) { alert('Виберіть установку'); return; }
 
-    if (!id) {
-      alert('Будь ласка, виберіть установку');
-      return;
-    }
+    const inst = getInstallation(id);
+    if (!inst) { alert('Установку не знайдено'); return; }
 
-    const installation = getInstallation(id);
-    if (!installation) {
-      alert('Установку не знайдено');
-      return;
-    }
-
-    currentQRInstallation = installation;
-    createQRCode(installation.id);
+    currentQR = inst;
+    createQR(id);
   }
 
   function generateTestQR() {
-    const testId = 'TEST-001';
-    currentQRInstallation = { id: testId, name: 'Тестова установка' };
-    createQRCode(testId);
-
-    // Додаємо тестову установку якщо немає
-    if (!getInstallation(testId)) {
-      const installations = getInstallations();
-      installations.push({
-        id: testId,
+    const id = 'TEST-001';
+    // Додаємо тестову якщо немає
+    if (!getInstallation(id)) {
+      const data = getInstallations();
+      data.push({
+        id: id,
         name: 'Тестова установка',
         model: 'Тест',
         year: '2024',
         filterDate: '',
         createdAt: new Date().toISOString()
       });
-      saveInstallations(installations);
-      renderInstallations();
+      saveInstallations(data);
+      renderList();
       updateSelect();
     }
+    currentQR = getInstallation(id);
+    createQR(id);
   }
 
-  function createQRCode(text) {
-    console.log('📱 Створення QR для:', text);
-
+  function createQR(text) {
     const container = document.getElementById('qrCodeContainer');
-    const label = document.getElementById('qrLabel');
-    const downloadBtn = document.getElementById('downloadQrBtn');
-    const printBtn = document.getElementById('printQrBtn');
-
-    // Очищуємо
     container.innerHTML = '';
 
-    try {
-      // Створюємо QR
-      qrCodeInstance = new QRCode(container, {
-        text: text,
-        width: 250,
-        height: 250,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.L
-      });
+    new QRCode(container, {
+      text: text,
+      width: 250,
+      height: 250,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
 
-      // Додаємо підпис
-      label.textContent = `ID: ${text}`;
-
-      // Показуємо
-      document.getElementById('qrResult').classList.add('show');
-      downloadBtn.style.display = 'inline-flex';
-      printBtn.style.display = 'inline-flex';
-
-      console.log('✅ QR-код створено!');
-
-    } catch (error) {
-      console.error('❌ Помилка створення QR:', error);
-      container.innerHTML = `<p style="color:red;">Помилка: ${error.message}</p>`;
-    }
+    document.getElementById('qrLabel').textContent = `ID: ${text}`;
+    document.getElementById('qrResult').classList.add('show');
+    document.getElementById('downloadBtn').style.display = 'inline-flex';
+    document.getElementById('printBtn').style.display = 'inline-flex';
   }
 
   function downloadQR() {
-    const container = document.getElementById('qrCodeContainer');
-    const canvas = container.querySelector('canvas');
-    const img = container.querySelector('img');
-
-    let imageData;
-    if (canvas) {
-      imageData = canvas.toDataURL('image/png');
-    } else if (img) {
-      imageData = img.src;
-    } else {
-      alert('QR-код не знайдено. Спочатку згенеруйте його.');
-      return;
-    }
+    const canvas = document.querySelector('#qrCodeContainer canvas');
+    if (!canvas) { alert('QR не знайдено'); return; }
 
     const link = document.createElement('a');
-    link.download = `qr-${currentQRInstallation?.id || 'code'}.png`;
-    link.href = imageData;
-    document.body.appendChild(link);
+    link.download = `QR-${currentQR?.id || 'code'}.png`;
+    link.href = canvas.toDataURL('image/png');
     link.click();
-    document.body.removeChild(link);
   }
 
   function printQR() {
-    const container = document.getElementById('qrCodeContainer');
-    const canvas = container.querySelector('canvas');
-    const img = container.querySelector('img');
-
-    let imageData;
-    if (canvas) {
-      imageData = canvas.toDataURL('image/png');
-    } else if (img) {
-      imageData = img.src;
-    } else {
-      alert('QR-код не знайдено');
-      return;
-    }
+    const canvas = document.querySelector('#qrCodeContainer canvas');
+    if (!canvas) { alert('QR не знайдено'); return; }
 
     const win = window.open('', '_blank');
     win.document.write(`
-                <html>
-                    <head><title>Друк QR-коду</title></head>
-                    <body style="text-align:center;padding-top:50px;font-family:Arial,sans-serif;">
-                        <img src="${imageData}" style="max-width:300px;border:1px solid #ddd;padding:20px;border-radius:10px;">
-                        <p style="margin-top:20px;font-size:18px;font-weight:600;">${currentQRInstallation?.id || ''}</p>
-                        <p style="font-size:14px;color:#666;">${currentQRInstallation?.name || ''}</p>
-                        <p style="margin-top:30px;font-size:12px;color:#999;">Створено в CarCare PWA</p>
-                        <script>
-                            window.onload = function() {
-                                setTimeout(function() { window.print(); }, 500);
-                            }
-                        <\/script>
-                    </body>
-                </html>
+                <html><head><title>Друк QR</title></head>
+                <body style="text-align:center;padding:50px;font-family:Arial;">
+                    <img src="${canvas.toDataURL('image/png')}" style="max-width:300px;padding:20px;border:1px solid #ddd;border-radius:10px;">
+                    <p style="font-size:20px;font-weight:600;margin-top:20px;">${currentQR?.id || ''}</p>
+                    <p style="color:#666;">${currentQR?.name || ''}</p>
+                    <script>window.onload = function() { setTimeout(window.print, 500); } <\/script>
+                </body></html>
             `);
     win.document.close();
   }
 
-  // =====================================
-  // ВІДОБРАЖЕННЯ
-  // =====================================
-
-  function renderInstallations() {
+  // ==================== СПИСОК ====================
+  function renderList() {
     const container = document.getElementById('installationsList');
-    const installations = getInstallations();
+    const data = getInstallations();
 
-    if (installations.length === 0) {
-      container.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">Немає доданих установок</p>';
+    if (!data.length) {
+      container.innerHTML = '<p style="text-align:center;color:#666;">Немає установок</p>';
       return;
     }
 
-    container.innerHTML = installations.map(inst => `
+    container.innerHTML = data.map(i => `
                 <div class="installation-item">
                     <div class="info">
-                        <div class="name">${inst.name}</div>
-                        <div class="id">ID: ${inst.id} | Модель: ${inst.model || '—'}</div>
-                        <div class="id">Фільтр: ${inst.filterDate ? new Date(inst.filterDate).toLocaleDateString('uk-UA') : 'Не встановлено'}</div>
+                        <div class="name">${i.name}</div>
+                        <div class="id">ID: ${i.id} | Модель: ${i.model}</div>
+                        <div class="id">Фільтр: ${i.filterDate ? new Date(i.filterDate).toLocaleDateString('uk-UA') : 'Не встановлено'}</div>
                     </div>
                     <div class="actions">
-                        <button onclick="selectAndGenerate('${inst.id}')" class="btn btn-primary btn-sm">📱 QR</button>
-                        <button onclick="deleteInstallation('${inst.id}')" class="btn btn-danger btn-sm">🗑️</button>
+                        <button onclick="selectAndGenerate('${i.id}')" class="btn btn-primary btn-sm">📱 QR</button>
+                        <button onclick="deleteInstallation('${i.id}')" class="btn btn-danger btn-sm">🗑️</button>
                     </div>
                 </div>
             `).join('');
+  }
+
+  function deleteInstallation(id) {
+    if (!confirm(`Видалити ${id}?`)) return;
+    const data = getInstallations().filter(i => i.id !== id);
+    saveInstallations(data);
+    renderList();
+    updateSelect();
+    document.getElementById('qrResult').classList.remove('show');
   }
 
   function selectAndGenerate(id) {
@@ -406,30 +292,17 @@
 
   function updateSelect() {
     const select = document.getElementById('installSelect');
-    const currentValue = select.value;
-
-    select.innerHTML = '<option value="">-- Виберіть установку --</option>';
-
-    const installations = getInstallations();
-    installations.forEach(inst => {
-      const option = document.createElement('option');
-      option.value = inst.id;
-      option.textContent = `${inst.id} - ${inst.name}`;
-      select.appendChild(option);
+    const val = select.value;
+    select.innerHTML = '<option value="">-- Виберіть --</option>';
+    getInstallations().forEach(i => {
+      select.innerHTML += `<option value="${i.id}">${i.id} - ${i.name}</option>`;
     });
-
-    if (currentValue && getInstallation(currentValue)) {
-      select.value = currentValue;
-    }
+    if (val) select.value = val;
   }
 
-  // =====================================
-  // ІНІЦІАЛІЗАЦІЯ
-  // =====================================
-
+  // ==================== ІНІЦ ====================
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('⚙️ Адмін-панель завантажено');
-    renderInstallations();
+    renderList();
     updateSelect();
   });
 </script>
