@@ -188,3 +188,38 @@ function findCarByVin(vin) {
     document.getElementById('result').innerHTML = '';
   }
 }
+// Функція відкриття сторінки установки
+function openInstallationPage(vin) {
+  if (vin) {
+    window.location.href = `car.html?vin=${encodeURIComponent(vin)}`;
+  }
+}
+
+// Перевизначити onScanSuccess для переходу
+const originalOnScanSuccess = onScanSuccess;
+onScanSuccess = function(decodedText, decodedResult) {
+  console.log('QR-код знайдено:', decodedText);
+  stopScanner();
+
+  // Перевіряємо чи є дані про цю машину
+  const car = getCarData(decodedText);
+  if (car) {
+    // Якщо є - переходимо на сторінку
+    openInstallationPage(decodedText);
+  } else {
+    // Якщо немає - показуємо форму додавання
+    showAddCarForm(decodedText);
+  }
+};
+
+// Функція для генерації QR-коду (для адміна)
+function generateQRCode(vin) {
+  // Тут буде логіка генерації QR
+  alert(`Генерація QR-коду для ${vin} (буде в адмін-панелі)`);
+}
+
+// Експортуємо функції для використання в HTML
+window.openInstallationPage = openInstallationPage;
+window.generateQRCode = generateQRCode;
+window.editCarData = editCarData;
+window.clearResult = clearResult;

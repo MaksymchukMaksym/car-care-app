@@ -2,7 +2,7 @@
   "name": "CarCare",
   "short_name": "Care",
   "description": "info_about_equipment",
-  "start_url": "/indes.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#f4f4f4",
   "theme_color": "#333333",

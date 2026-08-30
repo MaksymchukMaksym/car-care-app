@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Інформація про авто</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .car-details {
+      padding: 20px 0;
+    }
+    .car-details .field {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+    }
+    .car-details .field .label {
+      color: #666;
+      font-weight: 500;
+    }
+    .car-details .field .value {
+      color: #1a1a2e;
+      font-weight: 600;
+    }
+    .back-btn {
+      background: #e0e0e0;
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .back-btn:hover {
+      background: #d0d0d0;
+    }
+    .filter-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #eee;
+    }
+    .filter-section h3 {
+      margin-bottom: 15px;
+      color: #1a1a2e;
+    }
+    .filter-section .date-input {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .filter-section .date-input input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+    }
+    .filter-section .date-input button {
+      flex: 0 0 auto;
+      padding: 10px 20px;
+      width: auto;
+      background: #48bb78;
+    }
+    .filter-section .date-input button:hover {
+      background: #38a169;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .status-good {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .status-warning {
+      background: #fefcbf;
+      color: #744210;
+    }
+    .status-danger {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    .success-msg {
+      display: none;
+      background: #c6f6d5;
+      color: #22543d;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .success-msg.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <button onclick="location.href='index.html'" class="back-btn">← На головну</button>
+  <h1>🚗 Інформація про авто</h1>
+
+  <div id="carInfo" class="car-details">
+    <p>Завантаження...</p>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  // Отримуємо VIN з URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const vin = urlParams.get('vin');
+
+  if (vin) {
+    const car = getCarData(vin);
+    if (car) {
+      displayCarInfoFull(vin, car);
+    } else {
+      document.getElementById('carInfo').innerHTML = `
+                <p style="text-align:center;color:#c33;padding:20px;">
+                    ❌ Автомобіль з VIN ${vin} не знайдено
+                </p>
+            `;
+    }
+  } else {
+    document.getElementById('carInfo').innerHTML = `
+            <p style="text-align:center;color:#666;padding:20px;">
+                ❓ VIN не вказано
+            </p>
+        `;
+  }
+
+  function displayCarInfoFull(vin, car) {
+    const filterStatus = getFilterStatus(car.airFilter);
+
+    document.getElementById('carInfo').innerHTML = `
+            <div class="field">
+                <span class="label">VIN-код</span>
+                <span class="value">${vin}</span>
+            </div>
+            <div class="field">
+                <span class="label">Модель</span>
+                <span class="value">${car.model || 'Невідомо'}</span>
+            </div>
+            <div class="field">
+                <span class="label">Рік випуску</span>
+                <span class="value">${car.year || 'Невідомо'}</span>
+            </div>
+            <div class="field">
+                <span class="label">Остання заміна масла</span>
+                <span class="value">${formatDate(car.oilChange)}</span>
+            </div>
+
+            <div class="filter-section">
+                <h3>🔧 Повітряний фільтр</h3>
+                <div class="field">
+                    <span class="label">Дата заміни</span>
+                    <span class="value">${formatDate(car.airFilter)}</span>
+                </div>
+                <div class="field">
+                    <span class="label">Статус</span>
+                    <span class="status-badge ${filterStatus.class}">${filterStatus.text}</span>
+                </div>
+
+                <div class="date-input">
+                    <input type="date" id="newFilterDate" value="${car.airFilter || ''}">
+                    <button onclick="updateFilterDate('${vin}')">🔄 Оновити</button>
+                </div>
+                <div id="updateMsg" class="success-msg">✅ Дату заміни оновлено!</div>
+            </div>
+
+            <div class="filter-section">
+                <h3>⛽ Паливний фільтр</h3>
+                <div class="field">
+                    <span class="label">Дата заміни</span>
+                    <span class="value">${formatDate(car.fuelFilter)}</span>
+                </div>
+                <div class="date-input">
+                    <input type="date" id="newFuelFilterDate" value="${car.fuelFilter || ''}">
+                    <button onclick="updateFuelFilterDate('${vin}')">🔄 Оновити</button>
+                </div>
+                <div id="updateFuelMsg" class="success-msg">✅ Дату заміни оновлено!</div>
+            </div>
+        `;
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return 'Не вказано';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('uk-UA');
+  }
+
+  function getFilterStatus(filterDate) {
+    if (!filterDate) {
+      return { text: '❓ Не встановлено', class: 'status-warning' };
+    }
+
+    const today = new Date();
+    const filter = new Date(filterDate);
+    const daysDiff = Math.floor((today - filter) / (1000 * 60 * 60 * 24));
+
+    if (daysDiff < 0) {
+      return { text: '✅ Актуальний', class: 'status-good' };
+    } else if (daysDiff <= 30) {
+      return { text: `⚠️ ${daysDiff} днів тому`, class: 'status-warning' };
+    } else {
+      return { text: `🔴 ПОТРІБНА ЗАМІНА (${daysDiff} днів)`, class: 'status-danger' };
+    }
+  }
+
+  function updateFilterDate(vin) {
+    const newDate = document.getElementById('newFilterDate').value;
+    if (!newDate) {
+      alert('Виберіть дату');
+      return;
+    }
+
+    const car = getCarData(vin);
+    if (car) {
+      car.airFilter = newDate;
+      saveCarData(vin, car);
+
+      const msg = document.getElementById('updateMsg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 3000);
+
+      // Оновлюємо сторінку
+      displayCarInfoFull(vin, car);
+    }
+  }
+
+  function updateFuelFilterDate(vin) {
+    const newDate = document.getElementById('newFuelFilterDate').value;
+    if (!newDate) {
+      alert('Виберіть дату');
+      return;
+    }
+
+    const car = getCarData(vin);
+    if (car) {
+      car.fuelFilter = newDate;
+      saveCarData(vin, car);
+
+      const msg = document.getElementById('updateFuelMsg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 3000);
+
+      displayCarInfoFull(vin, car);
+    }
+  }
+</script>
+</body>
+</html>
