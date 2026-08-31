@@ -2,27 +2,71 @@
 // АДМІН-ПАНЕЛЬ З FIREBASE
 // ============================================
 
+console.log('⚙️ Завантаження адмін-панелі...');
+
 let currentQR = null;
-let unsubscribe = null;
 
 // ============================================
 // ІНІЦІАЛІЗАЦІЯ
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('⚙️ Адмін-панель завантажено');
+  console.log('✅ DOM завантажено');
+
+  // Перевіряємо Firebase
+  if (typeof db === 'undefined') {
+    console.error('❌ Firebase не підключено!');
+    alert('Помилка: Firebase не підключено. Перевірте файл firebase-config.js');
+    return;
+  }
+
+  console.log('✅ Firebase підключено');
+
+  // Завантажуємо список
+  loadInstallations();
 
   // Підписуємося на зміни в реальному часі
-  unsubscribe = listenInstallations((installations) => {
-    renderList(installations);
-    updateSelect(installations);
-  });
+  db.collection('installations')
+    .onSnapshot((snapshot) => {
+      const installations = [];
+      snapshot.forEach(doc => {
+        installations.push(doc.data());
+      });
+      console.log('🔄 Оновлення даних:', installations.length);
+      renderList(installations);
+      updateSelect(installations);
+    }, (error) => {
+      console.error('❌ Помилка слухача:', error);
+    });
 
   // Форма додавання
-  document.getElementById('addForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    await addInstallation();
-  });
+  const form = document.getElementById('addForm');
+  if (form) {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      await addInstallation();
+    });
+  } else {
+    console.error('❌ Форма не знайдена!');
+  }
 });
+
+// ============================================
+// ЗАВАНТАЖЕННЯ СПИСКУ
+// ============================================
+async function loadInstallations() {
+  try {
+    const snapshot = await db.collection('installations').get();
+    const installations = [];
+    snapshot.forEach(doc => {
+      installations.push(doc.data());
+    });
+    renderList(installations);
+    updateSelect(installations);
+    console.log('📊 Завантажено:', installations.length);
+  } catch (error) {
+    console.error('❌ Помилка завантаження:', error);
+  }
+}
 
 // ============================================
 // ДОДАВАННЯ УСТАНОВКИ
@@ -36,25 +80,33 @@ async function addInstallation() {
     return;
   }
 
-  // Перевіряємо чи існує
-  const existing = await getInstallation(id);
-  if (existing) {
-    alert(`❌ ID "${id}" вже існує!`);
-    return;
+  try {
+    // Перевіряємо чи існує
+    const doc = await db.collection('installations').doc(id).get();
+    if (doc.exists) {
+      alert(`❌ ID "${id}" вже існує!`);
+      return;
+    }
+
+    const newInstallation = {
+      id: id,
+      name: name,
+      model: document.getElementById('instModel').value.trim() || '—',
+      year: document.getElementById('instYear').value.trim() || '—',
+      filterDate: document.getElementById('filterDate').value || '',
+      createdAt: new Date().toISOString()
+    };
+
+    await db.collection('installations').doc(id).set(newInstallation);
+    console.log('✅ Збережено:', id);
+
+    document.getElementById('addForm').reset();
+    alert(`✅ Установку "${id}" додано!`);
+
+  } catch (error) {
+    console.error('❌ Помилка:', error);
+    alert('❌ Помилка: ' + error.message);
   }
-
-  const newInstallation = {
-    id: id,
-    name: name,
-    model: document.getElementById('instModel').value.trim() || '—',
-    year: document.getElementById('instYear').value.trim() || '—',
-    filterDate: document.getElementById('filterDate').value || '',
-    createdAt: new Date().toISOString()
-  };
-
-  await saveInstallation(newInstallation);
-  document.getElementById('addForm').reset();
-  alert(`✅ Додано: ${id}`);
 }
 
 // ============================================
@@ -62,22 +114,42 @@ async function addInstallation() {
 // ============================================
 async function deleteInstallation(id) {
   if (!confirm(`Видалити ${id}?`)) return;
-  await deleteInstallation(id);
-  document.getElementById('qrResult').classList.remove('show');
+
+  try {
+    await db.collection('installations').doc(id).delete();
+    console.log('✅ Видалено:', id);
+    document.getElementById('qrResult').classList.remove('show');
+  } catch (error) {
+    console.error('❌ Помилка видалення:', error);
+    alert('❌ Помилка: ' + error.message);
+  }
 }
 
 // ============================================
 // ГЕНЕРАЦІЯ QR
 // ============================================
 async function generateQR() {
-  const id = document.getElementById('installSelect').value;
-  if (!id) { alert('Виберіть установку'); return; }
+  const select = document.getElementById('installSelect');
+  const id = select.value;
 
-  const inst = await getInstallation(id);
-  if (!inst) { alert('Установку не знайдено'); return; }
+  if (!id) {
+    alert('Виберіть установку');
+    return;
+  }
 
-  currentQR = inst;
-  createQR(id);
+  try {
+    const doc = await db.collection('installations').doc(id).get();
+    if (!doc.exists) {
+      alert('Установку не знайдено');
+      return;
+    }
+
+    currentQR = doc.data();
+    createQR(id);
+  } catch (error) {
+    console.error('❌ Помилка:', error);
+    alert('❌ Помилка: ' + error.message);
+  }
 }
 
 function generateTestQR() {
@@ -88,6 +160,11 @@ function generateTestQR() {
 
 function createQR(text) {
   const container = document.getElementById('qrCodeContainer');
+  if (!container) {
+    console.error('❌ Контейнер QR не знайдено');
+    return;
+  }
+
   container.innerHTML = '';
 
   new QRCode(container, {
@@ -99,15 +176,24 @@ function createQR(text) {
     correctLevel: QRCode.CorrectLevel.H
   });
 
-  document.getElementById('qrLabel').textContent = `ID: ${text}`;
-  document.getElementById('qrResult').classList.add('show');
-  document.getElementById('downloadBtn').style.display = 'inline-flex';
-  document.getElementById('printBtn').style.display = 'inline-flex';
+  const label = document.getElementById('qrLabel');
+  if (label) label.textContent = `ID: ${text}`;
+
+  const result = document.getElementById('qrResult');
+  if (result) result.classList.add('show');
+
+  const downloadBtn = document.getElementById('downloadBtn');
+  const printBtn = document.getElementById('printBtn');
+  if (downloadBtn) downloadBtn.style.display = 'inline-flex';
+  if (printBtn) printBtn.style.display = 'inline-flex';
 }
 
 function downloadQR() {
   const canvas = document.querySelector('#qrCodeContainer canvas');
-  if (!canvas) { alert('QR не знайдено'); return; }
+  if (!canvas) {
+    alert('QR не знайдено. Спочатку згенеруйте його.');
+    return;
+  }
 
   const link = document.createElement('a');
   link.download = `QR-${currentQR?.id || 'code'}.png`;
@@ -117,7 +203,10 @@ function downloadQR() {
 
 function printQR() {
   const canvas = document.querySelector('#qrCodeContainer canvas');
-  if (!canvas) { alert('QR не знайдено'); return; }
+  if (!canvas) {
+    alert('QR не знайдено');
+    return;
+  }
 
   const win = window.open('', '_blank');
   win.document.write(`
@@ -137,9 +226,13 @@ function printQR() {
 // ============================================
 function renderList(installations) {
   const container = document.getElementById('installationsList');
+  if (!container) {
+    console.error('❌ Контейнер списку не знайдено');
+    return;
+  }
 
   if (!installations || !installations.length) {
-    container.innerHTML = '<p style="text-align:center;color:#666;">Немає установок</p>';
+    container.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">Немає установок</p>';
     return;
   }
 
@@ -160,8 +253,13 @@ function renderList(installations) {
 
 function updateSelect(installations) {
   const select = document.getElementById('installSelect');
+  if (!select) {
+    console.error('❌ Select не знайдено');
+    return;
+  }
+
   const val = select.value;
-  select.innerHTML = '<option value="">-- Виберіть --</option>';
+  select.innerHTML = '<option value="">-- Виберіть установку --</option>';
 
   if (installations) {
     installations.forEach(i => {
@@ -175,6 +273,19 @@ function updateSelect(installations) {
 }
 
 async function selectAndGenerate(id) {
-  document.getElementById('installSelect').value = id;
+  const select = document.getElementById('installSelect');
+  if (select) select.value = id;
   await generateQR();
 }
+
+// ============================================
+// ЕКСПОРТ
+// ============================================
+window.generateQR = generateQR;
+window.generateTestQR = generateTestQR;
+window.downloadQR = downloadQR;
+window.printQR = printQR;
+window.deleteInstallation = deleteInstallation;
+window.selectAndGenerate = selectAndGenerate;
+window.loadInstallations = loadInstallations;
+window.addInstallation = addInstallation;
