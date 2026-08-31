@@ -38,6 +38,16 @@
     .qr-label { font-weight: 600; margin-top: 10px; color: #1a1a2e; }
     .test-btn { background: #ed8936; color: white; }
     .test-btn:hover { background: #dd6b20; }
+    .sync-status {
+      background: #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    .sync-status.online { background: #d4edda; color: #155724; }
+    .sync-status.offline { background: #f8d7da; color: #721c24; }
     .note { background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ffc107; }
     @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
   </style>
@@ -48,6 +58,8 @@
     <h1>⚙️ Адмін-панель</h1>
     <a href="index.html" class="back-btn">← На головну</a>
   </div>
+
+  <div id="syncStatus" class="sync-status">🔄 Синхронізація...</div>
 
   <!-- Додавання -->
   <div class="section">
@@ -84,8 +96,7 @@
     <h2>📱 Генерація QR</h2>
 
     <div class="note">
-      <strong>⚠️ Важливо:</strong> Після створення QR-коду, обов'язково <strong>скачайте</strong> його та
-      <strong>роздрукуйте</strong> в хорошій якості. QR має бути чітким та контрастним.
+      <strong>⚠️ Важливо:</strong> QR-код генерується з ID установки. Скачайте його та роздрукуйте для наклеювання на обладнання.
     </div>
 
     <div class="form-group">
@@ -118,193 +129,11 @@
   </div>
 </div>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script>
-  // ==================== ДАНІ ====================
-  function getInstallations() {
-    try {
-      const data = localStorage.getItem('installations');
-      return data ? JSON.parse(data) : [];
-    } catch { return []; }
-  }
-
-  function saveInstallations(data) {
-    localStorage.setItem('installations', JSON.stringify(data));
-  }
-
-  function getInstallation(id) {
-    return getInstallations().find(i => i.id === id) || null;
-  }
-
-  // ==================== ДОДАВАННЯ ====================
-  document.getElementById('addForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const id = document.getElementById('instId').value.trim();
-    const name = document.getElementById('instName').value.trim();
-
-    if (!id || !name) {
-      alert('Заповніть ID та назву');
-      return;
-    }
-
-    if (getInstallation(id)) {
-      alert(`ID "${id}" вже існує!`);
-      return;
-    }
-
-    const data = getInstallations();
-    data.push({
-      id: id,
-      name: name,
-      model: document.getElementById('instModel').value.trim() || '—',
-      year: document.getElementById('instYear').value.trim() || '—',
-      filterDate: document.getElementById('filterDate').value || '',
-      createdAt: new Date().toISOString()
-    });
-
-    saveInstallations(data);
-    this.reset();
-    renderList();
-    updateSelect();
-    alert(`✅ Додано: ${id}`);
-  });
-
-  // ==================== QR ====================
-  let currentQR = null;
-
-  function generateQR() {
-    const id = document.getElementById('installSelect').value;
-    if (!id) { alert('Виберіть установку'); return; }
-
-    const inst = getInstallation(id);
-    if (!inst) { alert('Установку не знайдено'); return; }
-
-    currentQR = inst;
-    createQR(id);
-  }
-
-  function generateTestQR() {
-    const id = 'TEST-001';
-    // Додаємо тестову якщо немає
-    if (!getInstallation(id)) {
-      const data = getInstallations();
-      data.push({
-        id: id,
-        name: 'Тестова установка',
-        model: 'Тест',
-        year: '2024',
-        filterDate: '',
-        createdAt: new Date().toISOString()
-      });
-      saveInstallations(data);
-      renderList();
-      updateSelect();
-    }
-    currentQR = getInstallation(id);
-    createQR(id);
-  }
-
-  function createQR(text) {
-    const container = document.getElementById('qrCodeContainer');
-    container.innerHTML = '';
-
-    new QRCode(container, {
-      text: text,
-      width: 250,
-      height: 250,
-      colorDark: "#000000",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
-    });
-
-    document.getElementById('qrLabel').textContent = `ID: ${text}`;
-    document.getElementById('qrResult').classList.add('show');
-    document.getElementById('downloadBtn').style.display = 'inline-flex';
-    document.getElementById('printBtn').style.display = 'inline-flex';
-  }
-
-  function downloadQR() {
-    const canvas = document.querySelector('#qrCodeContainer canvas');
-    if (!canvas) { alert('QR не знайдено'); return; }
-
-    const link = document.createElement('a');
-    link.download = `QR-${currentQR?.id || 'code'}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }
-
-  function printQR() {
-    const canvas = document.querySelector('#qrCodeContainer canvas');
-    if (!canvas) { alert('QR не знайдено'); return; }
-
-    const win = window.open('', '_blank');
-    win.document.write(`
-                <html><head><title>Друк QR</title></head>
-                <body style="text-align:center;padding:50px;font-family:Arial;">
-                    <img src="${canvas.toDataURL('image/png')}" style="max-width:300px;padding:20px;border:1px solid #ddd;border-radius:10px;">
-                    <p style="font-size:20px;font-weight:600;margin-top:20px;">${currentQR?.id || ''}</p>
-                    <p style="color:#666;">${currentQR?.name || ''}</p>
-                    <script>window.onload = function() { setTimeout(window.print, 500); } <\/script>
-                </body></html>
-            `);
-    win.document.close();
-  }
-
-  // ==================== СПИСОК ====================
-  function renderList() {
-    const container = document.getElementById('installationsList');
-    const data = getInstallations();
-
-    if (!data.length) {
-      container.innerHTML = '<p style="text-align:center;color:#666;">Немає установок</p>';
-      return;
-    }
-
-    container.innerHTML = data.map(i => `
-                <div class="installation-item">
-                    <div class="info">
-                        <div class="name">${i.name}</div>
-                        <div class="id">ID: ${i.id} | Модель: ${i.model}</div>
-                        <div class="id">Фільтр: ${i.filterDate ? new Date(i.filterDate).toLocaleDateString('uk-UA') : 'Не встановлено'}</div>
-                    </div>
-                    <div class="actions">
-                        <button onclick="selectAndGenerate('${i.id}')" class="btn btn-primary btn-sm">📱 QR</button>
-                        <button onclick="deleteInstallation('${i.id}')" class="btn btn-danger btn-sm">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-  }
-
-  function deleteInstallation(id) {
-    if (!confirm(`Видалити ${id}?`)) return;
-    const data = getInstallations().filter(i => i.id !== id);
-    saveInstallations(data);
-    renderList();
-    updateSelect();
-    document.getElementById('qrResult').classList.remove('show');
-  }
-
-  function selectAndGenerate(id) {
-    document.getElementById('installSelect').value = id;
-    generateQR();
-  }
-
-  function updateSelect() {
-    const select = document.getElementById('installSelect');
-    const val = select.value;
-    select.innerHTML = '<option value="">-- Виберіть --</option>';
-    getInstallations().forEach(i => {
-      select.innerHTML += `<option value="${i.id}">${i.id} - ${i.name}</option>`;
-    });
-    if (val) select.value = val;
-  }
-
-  // ==================== ІНІЦ ====================
-  document.addEventListener('DOMContentLoaded', function() {
-    renderList();
-    updateSelect();
-  });
-</script>
+<script src="js/firebase-config.js"></script>
+<script src="js/admin.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Інформація</title>
+  <title>Інформація про установку</title>
   <link rel="manifest" href="manifest.json">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -28,34 +28,40 @@
     .msg { display: none; background: #d4edda; color: #155724; padding: 10px; border-radius: 8px; margin-top: 10px; }
     .msg.show { display: block; }
     .loading { text-align: center; padding: 40px 0; color: #666; }
+    .sync-status {
+      background: #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    .sync-status.online { background: #d4edda; color: #155724; }
+    .sync-status.offline { background: #f8d7da; color: #721c24; }
   </style>
 </head>
 <body>
 <div id="app">
   <button onclick="location.href='index.html'" class="back-btn">← На головну</button>
   <h1>🔧 Інформація</h1>
+
+  <div id="syncStatus" class="sync-status">🔄 Синхронізація...</div>
   <div id="info"><div class="loading">Завантаження...</div></div>
 </div>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+
 <script>
-  // ==================== ДАНІ ====================
-  function getInstallations() {
-    try { return JSON.parse(localStorage.getItem('installations') || '[]'); } catch { return []; }
-  }
-
-  function getInstallation(id) {
-    return getInstallations().find(i => i.id === id) || null;
-  }
-
-  function saveInstallations(data) {
-    localStorage.setItem('installations', JSON.stringify(data));
-  }
-
-  // ==================== ВІДОБРАЖЕННЯ ====================
+  // ==================== ОТРИМАННЯ ID ====================
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id') || params.get('vin');
+  console.log('📌 ID з URL:', id);
 
-  function render() {
+  // ==================== ВІДОБРАЖЕННЯ ====================
+  async function render() {
     const container = document.getElementById('info');
 
     if (!id) {
@@ -63,7 +69,7 @@
       return;
     }
 
-    const inst = getInstallation(id);
+    const inst = await getInstallation(id);
     if (!inst) {
       container.innerHTML = `
                     <div class="loading">
@@ -97,23 +103,25 @@
             `;
   }
 
-  function updateFilter() {
+  // ==================== ОНОВЛЕННЯ ДАТИ ====================
+  async function updateFilter() {
     const date = document.getElementById('newDate').value;
     if (!date) { alert('Виберіть дату'); return; }
 
-    const data = getInstallations();
-    const idx = data.findIndex(i => i.id === id);
-    if (idx === -1) return;
+    const inst = await getInstallation(id);
+    if (!inst) { alert('Установку не знайдено'); return; }
 
-    data[idx].filterDate = date;
-    data[idx].lastUpdate = new Date().toISOString();
-    saveInstallations(data);
+    inst.filterDate = date;
+    inst.lastUpdate = new Date().toISOString();
+
+    await saveInstallation(inst);
 
     document.getElementById('msg').classList.add('show');
     setTimeout(() => document.getElementById('msg').classList.remove('show'), 3000);
     render();
   }
 
+  // ==================== ДОПОМІЖНІ ====================
   function getStatus(date) {
     if (!date) return { text: '❓ Не встановлено', class: 'status-warning' };
     const days = Math.floor((new Date() - new Date(date)) / (1000*60*60*24));
@@ -127,7 +135,8 @@
     return new Date(d).toLocaleDateString('uk-UA');
   }
 
-  render();
+  // ==================== ЗАПУСК ====================
+  document.addEventListener('DOMContentLoaded', render);
 </script>
 </body>
 </html>
