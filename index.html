@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -20,47 +20,30 @@
     .btn-primary { background: #667eea; color: white; }
     .btn-secondary { background: #e2e8f0; color: #333; }
     .btn-success { background: #48bb78; color: white; }
-    .manual { margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee; }
-    .manual input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; }
-    .manual input:focus { outline: none; border-color: #667eea; }
-    .manual .row { display: flex; gap: 10px; margin-top: 10px; }
     .result-box { margin-top: 15px; padding: 15px; border-radius: 10px; display: none; }
     .result-box.success { display: block; background: #d4edda; color: #155724; }
     .result-box.error { display: block; background: #f8d7da; color: #721c24; }
     .result-box.warning { display: block; background: #fff3cd; color: #856404; }
     .footer { text-align: center; padding: 20px; color: #888; font-size: 13px; margin-top: 20px; }
-    .sync-status {
-      background: #e2e8f0;
-      padding: 8px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      display: inline-block;
-      margin-bottom: 10px;
-    }
-    .sync-status.online { background: #d4edda; color: #155724; }
-    .sync-status.offline { background: #f8d7da; color: #721c24; }
   </style>
 </head>
 <body>
 <div id="app">
   <div class="header">
     <h1>🚗 CarCare</h1>
-    <a href="admin.html" class="admin-link">⚙️ Адмін</a>
+    <a href="admin.html" class="admin-link">⚙️ Admin</a>
   </div>
-
-  <div id="syncStatus" class="sync-status">🔄 Синхронізація...</div>
 
   <div id="reader"></div>
 
   <div class="controls">
-    <button id="startScanBtn" class="btn btn-primary">📷 Сканувати QR</button>
-    <button id="stopScanBtn" class="btn btn-secondary" style="display:none;">⏹ Зупинити</button>
+    <button id="startScanBtn" class="btn btn-primary">📷 QR scannen</button>
+    <button id="stopScanBtn" class="btn btn-secondary" style="display:none;">⏹ Stop</button>
   </div>
 
   <div id="result" class="result-box"></div>
 
-
-  <div class="footer">© 2026 CarCare - PWA з Firebase</div>
+  <div class="footer">© 2026 CarCare - PWA mit Firebase</div>
 </div>
 
 <!-- Firebase SDK -->
