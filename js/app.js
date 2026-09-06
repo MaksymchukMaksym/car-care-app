@@ -1,45 +1,41 @@
 // ============================================
-// ГОЛОВНИЙ ДОДАТОК З FIREBASE
+// HAUPTSKript MIT FIREBASE
 // ============================================
 
-let scanner = null;
-let scanning = false;
-let unsubscribe = null;
+var scanner = null;
+var scanning = false;
+var unsubscribe = null;
 
 // ============================================
-// ІНІЦІАЛІЗАЦІЯ
+// INITIALISIERUNG
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('📱 CarCare PWA завантажено');
+  console.log('CarCare PWA geladen');
 
-  // Підписуємося на зміни в базі
-  unsubscribe = listenInstallations((installations) => {
-    console.log('📊 Дані оновлено:', installations.length);
+  unsubscribe = listenInstallations(function(installations) {
+    console.log('Daten aktualisiert:', installations.length);
   });
 
-  // Кнопки
   document.getElementById('startScanBtn').addEventListener('click', startScanner);
   document.getElementById('stopScanBtn').addEventListener('click', stopScanner);
 
-
-  // Перевірка URL
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get('id') || params.get('vin');
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get('id') || params.get('vin');
   if (id) {
-    getInstallation(id).then(inst => {
+    getInstallation(id).then(function(inst) {
       if (inst) {
-        window.location.href = `car.html?id=${encodeURIComponent(id)}`;
+        window.location.href = 'car.html?id=' + encodeURIComponent(id);
       }
     });
   }
 });
 
 // ============================================
-// СКАНЕР
+// SCANNER
 // ============================================
 function startScanner() {
   if (!navigator.mediaDevices) {
-    showResult('Браузер не підтримує камеру', 'error');
+    showResult('Kamera wird nicht unterstützt', 'error');
     return;
   }
 
@@ -52,74 +48,84 @@ function startScanner() {
     scanner = new Html5Qrcode("reader");
     scanner.start(
       { facingMode: "environment" },
-      { fps: 15, qrbox: { width: 250, height: 250 } },
+      {
+        fps: 30,
+        qrbox: { width: 200, height: 200 }
+      },
       onScanSuccess,
       onScanError
-    ).then(() => {
+    ).then(function() {
       scanning = true;
       document.getElementById('startScanBtn').style.display = 'none';
       document.getElementById('stopScanBtn').style.display = 'inline-flex';
-      showResult('📷 Сканування запущено...', 'success');
+      showResult('Scan läuft …', 'success');
     });
   } catch(e) {
-    showResult('Помилка: ' + e.message, 'error');
+    showResult('Fehler: ' + e.message, 'error');
   }
 }
 
 function stopScanner() {
   if (scanner && scanning) {
-    scanner.stop().then(() => {
+    scanner.stop().then(function() {
       scanning = false;
       document.getElementById('startScanBtn').style.display = 'inline-flex';
       document.getElementById('stopScanBtn').style.display = 'none';
-      showResult('⏹ Сканування зупинено', 'success');
+      showResult('Scan gestoppt', 'success');
     });
   }
 }
 
 // ============================================
-// ОБРОБКА РЕЗУЛЬТАТІВ
+// ERGEBNISSE VERARBEITEN
 // ============================================
 async function onScanSuccess(text) {
-  console.log('✅ Відскановано:', text);
-  stopScanner();
+  console.log('Gescannt:', text);
 
-  const clean = text.trim();
-  showResult(`✅ Відскановано: ${clean}`, 'success');
+  if (scanner && scanning) {
+    try {
+      await scanner.stop();
+      scanning = false;
+      document.getElementById('startScanBtn').style.display = 'inline-flex';
+      document.getElementById('stopScanBtn').style.display = 'none';
+    } catch(e) {
+      console.error('Stop Fehler:', e);
+    }
+  }
 
-  // Шукаємо в Firebase
-  const inst = await getInstallation(clean);
+  var clean = text.trim();
+  showResult('Gescannt: ' + clean, 'success');
+
+  var inst = await getInstallation(clean);
 
   if (inst) {
-    setTimeout(() => {
-      window.location.href = `car.html?id=${encodeURIComponent(clean)}`;
-    }, 1200);
+    setTimeout(function() {
+      window.location.href = 'car.html?id=' + encodeURIComponent(clean);
+    }, 800);
   } else {
-    setTimeout(() => {
+    setTimeout(function() {
       showNotFound(clean);
-    }, 1200);
+    }, 800);
   }
 }
 
 function onScanError(err) {
-  // Ігноруємо
+  // Ignorieren
 }
 
 // ============================================
-// ВІДОБРАЖЕННЯ
+// ANZEIGE
 // ============================================
 function showResult(msg, type) {
-  const el = document.getElementById('result');
+  var el = document.getElementById('result');
   el.textContent = msg;
   el.className = 'result-box ' + type;
 }
 
 function showNotFound(id) {
-  const el = document.getElementById('result');
-  el.innerHTML = `
-        <strong>⚠️ Установка "${id}" не знайдена</strong><br>
-        <a href="admin.html" style="color:#667eea;">Додати в адмін-панелі</a>
-    `;
+  var el = document.getElementById('result');
+  el.innerHTML =
+    '<strong>Anlage "' + id + '" nicht gefunden</strong><br>' +
+    '<a href="admin.html" style="color:#5a6a7a;text-decoration:underline;">In Admin-Panel hinzufügen</a>';
   el.className = 'result-box warning';
 }
-
