@@ -3,49 +3,258 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin-Panel</title>
+  <title>Admin</title>
   <link rel="manifest" href="manifest.json">
   <style>
+    /* ==========================================
+       RESET
+    ========================================== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
-    .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    h1 { color: #1a1a2e; margin-bottom: 20px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .back-btn { background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; }
-    .section { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-    .section h2 { margin-bottom: 15px; font-size: 18px; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-weight: 500; margin-bottom: 4px; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
-    .form-group textarea { resize: vertical; min-height: 80px; }
-    .btn { padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.3s; }
-    .btn:hover { transform: translateY(-2px); }
-    .btn-primary { background: #667eea; color: white; }
-    .btn-success { background: #48bb78; color: white; }
-    .btn-danger { background: #fc8181; color: white; }
-    .btn-secondary { background: #e2e8f0; color: #333; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .qr-result { margin-top: 20px; padding: 20px; background: white; border-radius: 10px; text-align: center; display: none; }
-    .qr-result.show { display: block; }
-    #qrCodeContainer { display: flex; justify-content: center; padding: 20px; background: white; border-radius: 10px; }
-    #qrCodeContainer img { max-width: 250px; }
-    .installation-item { display: flex; justify-content: space-between; padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #667eea; }
-    .installation-item .info { flex: 1; }
-    .installation-item .info .name { font-weight: 600; }
-    .installation-item .info .id { font-size: 13px; color: #666; }
-    .installation-item .actions { display: flex; gap: 8px; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
-    .qr-label { font-weight: 600; margin-top: 10px; color: #1a1a2e; }
-    .note { background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ffc107; }
-    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    body {
+      font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #e5e0d8;
+      padding: 20px 16px;
+      color: #222;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #f8f5f0;
+      padding: 24px 22px 30px;
+      border-radius: 2px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid #d6d0c7;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 500;
+      color: #2b2824;
+      letter-spacing: -0.2px;
+    }
+
+    .back-btn {
+      background: transparent;
+      border: 1px solid #bfb8ad;
+      padding: 5px 16px;
+      border-radius: 2px;
+      font-size: 13px;
+      color: #3d3a36;
+      text-decoration: none;
+      transition: background 0.1s;
+    }
+
+    .back-btn:hover {
+      background: #eae4db;
+    }
+
+    /* ===== SECTIONS ===== */
+    .section {
+      background: transparent;
+      padding: 16px 0;
+      border-bottom: 1px solid #e0dad2;
+      margin-bottom: 0;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section h2 {
+      font-size: 15px;
+      font-weight: 500;
+      color: #3d3a36;
+      margin-bottom: 14px;
+      letter-spacing: 0.2px;
+    }
+
+    /* ===== FORM ===== */
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 400;
+      color: #6b6257;
+      margin-bottom: 2px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid #cbc3b8;
+      border-radius: 2px;
+      font-size: 14px;
+      background: #fcfaf7;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: 1px solid #8f7e6a;
+      border-color: #8f7e6a;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 8px 24px;
+      border: 1px solid #bfb8ad;
+      border-radius: 2px;
+      font-size: 14px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: background 0.1s;
+      background: transparent;
+      color: #3d3a36;
+    }
+
+    .btn:hover {
+      background: #eae4db;
+    }
+
+    .btn-primary {
+      background: #d6cec3;
+      border-color: #cbc3b8;
+    }
+
+    .btn-primary:hover {
+      background: #cbc3b8;
+    }
+
+    .btn-success {
+      background: #d6dccb;
+      border-color: #c8ceb8;
+    }
+
+    .btn-success:hover {
+      background: #c8ceb8;
+    }
+
+    .btn-danger {
+      background: #e8d6d1;
+      border-color: #d6c8c3;
+    }
+
+    .btn-danger:hover {
+      background: #d6c8c3;
+    }
+
+    .btn-sm {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+
+    /* ===== QR ===== */
+    .qr-result {
+      margin-top: 16px;
+      padding: 16px;
+      background: #fcfaf7;
+      border: 1px solid #e0dad2;
+      text-align: center;
+      display: none;
+    }
+
+    .qr-result.show {
+      display: block;
+    }
+
+    #qrCodeContainer {
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+      background: white;
+    }
+
+    #qrCodeContainer img {
+      max-width: 200px;
+    }
+
+    .qr-label {
+      font-weight: 500;
+      margin-top: 8px;
+      color: #2b2824;
+    }
+
+    /* ===== LIST ===== */
+    .installation-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0dad2;
+      align-items: center;
+    }
+
+    .installation-item:last-child {
+      border-bottom: none;
+    }
+
+    .installation-item .info .name {
+      font-weight: 500;
+    }
+
+    .installation-item .info .id {
+      font-size: 13px;
+      color: #6b6257;
+    }
+
+    .installation-item .actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* ===== NOTE ===== */
+    .note {
+      background: #f0ead8;
+      padding: 10px 14px;
+      border-left: 3px solid #b5a56a;
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: #4a4030;
+    }
+
+    .note strong {
+      font-weight: 500;
+    }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 600px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .container { padding: 18px 14px 22px; }
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>Admin-Panel</h1>
-    <a href="index.html" class="back-btn">Zurück</a>
+    <h1>Admin</h1>
+    <a href="index.html" class="back-btn">← zurück</a>
   </div>
 
   <!-- Hinzufügen -->
@@ -118,31 +327,27 @@
     </form>
   </div>
 
-  <!-- QR-Generierung -->
+  <!-- QR -->
   <div class="section">
-    <h2>QR-Generierung</h2>
-
+    <h2>QR generieren</h2>
     <div class="note">
-      <strong>Wichtig:</strong> Der QR-Code wird mit der Anlagen-ID generiert. Laden Sie ihn herunter und drucken Sie ihn aus, um ihn auf die Anlage zu kleben.
+      <strong>Hinweis:</strong> Der QR-Code wird mit der Anlagen-ID generiert. Download und Ausdruck für die Anlage.
     </div>
-
     <div class="form-group">
       <label>Anlage auswählen</label>
       <select id="installSelect">
         <option value="">-- Bitte wählen --</option>
       </select>
     </div>
-
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button onclick="generateQR()" class="btn btn-primary">QR erstellen</button>
     </div>
-
     <div id="qrResult" class="qr-result">
-      <h3>QR-Code:</h3>
+      <h3 style="font-weight:500;font-size:15px;margin-bottom:10px;">QR-Code</h3>
       <div id="qrCodeContainer"></div>
       <div id="qrLabel" class="qr-label"></div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:15px;">
-        <button onclick="downloadQR()" class="btn btn-success" id="downloadBtn" style="display:none;">Herunterladen</button>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
+        <button onclick="downloadQR()" class="btn btn-success" id="downloadBtn" style="display:none;">Download</button>
         <button onclick="printQR()" class="btn btn-secondary" id="printBtn" style="display:none;">Drucken</button>
       </div>
     </div>
@@ -157,16 +362,16 @@
 
 <!-- Passwortschutz -->
 <script>
-  const ADMIN_PASSWORD = '123456'; // Ändern Sie das Passwort!
+  const ADMIN_PASSWORD = '123456';
 
   function checkPassword() {
-    const input = prompt('Admin-Passwort eingeben:');
+    const input = prompt('Admin-Passwort:');
     if (input !== ADMIN_PASSWORD) {
       document.body.innerHTML = `
-        <div style="text-align:center;margin-top:100px;padding:40px;font-family:Arial;">
-          <h1 style="color:red;">ZUGANG VERWEIGERT</h1>
-          <p style="color:#666;margin-top:10px;">Falsches Passwort.</p>
-          <button onclick="location.reload()" style="margin-top:20px;padding:10px 30px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;">Erneut versuchen</button>
+        <div style="text-align:center;margin-top:80px;padding:40px;font-family:'Segoe UI',sans-serif;">
+          <h1 style="font-weight:400;color:#6b3d3a;">ZUGANG VERWEIGERT</h1>
+          <p style="color:#6b6257;margin-top:8px;">Falsches Passwort.</p>
+          <button onclick="location.reload()" style="margin-top:16px;padding:6px 24px;background:#d6cec3;border:1px solid #bfb8ad;border-radius:2px;cursor:pointer;">erneut</button>
         </div>
       `;
       return false;

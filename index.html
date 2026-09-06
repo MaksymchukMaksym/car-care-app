@@ -3,47 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CarCare PWA</title>
+  <title>CarCare</title>
   <link rel="manifest" href="manifest.json">
   <style>
+    /* ==========================================
+       RESET
+    ========================================== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
-    #app { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .header h1 { color: #1a1a2e; }
-    .admin-link { background: #667eea; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 14px; }
-    #reader { width: 100%; max-width: 400px; margin: 0 auto; background: #000; border-radius: 12px; overflow: hidden; min-height: 300px; }
-    #reader video { width: 100% !important; }
-    .controls { display: flex; gap: 10px; justify-content: center; margin: 15px 0; flex-wrap: wrap; }
-    .btn { padding: 12px 24px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; }
-    .btn:hover { transform: translateY(-2px); }
-    .btn-primary { background: #667eea; color: white; }
-    .btn-secondary { background: #e2e8f0; color: #333; }
-    .btn-success { background: #48bb78; color: white; }
-    .result-box { margin-top: 15px; padding: 15px; border-radius: 10px; display: none; }
-    .result-box.success { display: block; background: #d4edda; color: #155724; }
-    .result-box.error { display: block; background: #f8d7da; color: #721c24; }
-    .result-box.warning { display: block; background: #fff3cd; color: #856404; }
-    .footer { text-align: center; padding: 20px; color: #888; font-size: 13px; margin-top: 20px; }
+
+    body {
+      font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #e5e0d8;
+      padding: 20px 16px;
+      color: #222;
+      line-height: 1.5;
+    }
+
+    #app {
+      max-width: 620px;
+      margin: 0 auto;
+      background: #f8f5f0;
+      padding: 24px 22px 30px;
+      border-radius: 2px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid #d6d0c7;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 500;
+      color: #2b2824;
+      letter-spacing: -0.2px;
+    }
+
+    .admin-link {
+      background: transparent;
+      border: 1px solid #bfb8ad;
+      padding: 5px 16px;
+      border-radius: 2px;
+      font-size: 13px;
+      color: #3d3a36;
+      text-decoration: none;
+      transition: background 0.1s;
+    }
+
+    .admin-link:hover {
+      background: #eae4db;
+    }
+
+    /* ===== SCANNER ===== */
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      background: #222;
+      border-radius: 2px;
+      overflow: hidden;
+      min-height: 280px;
+    }
+
+    #reader video {
+      width: 100% !important;
+    }
+
+    /* ===== BUTTONS ===== */
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 24px;
+      border: 1px solid #bfb8ad;
+      border-radius: 2px;
+      font-size: 14px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: background 0.1s;
+      background: transparent;
+      color: #3d3a36;
+    }
+
+    .btn:hover {
+      background: #eae4db;
+    }
+
+    .btn-primary {
+      background: #d6cec3;
+      border-color: #cbc3b8;
+    }
+
+    .btn-primary:hover {
+      background: #cbc3b8;
+    }
+
+    .btn-secondary {
+      background: #eae4db;
+    }
+
+    .btn-secondary:hover {
+      background: #d6cec3;
+    }
+
+    /* ===== RESULT ===== */
+    .result-box {
+      margin-top: 15px;
+      padding: 12px 16px;
+      border-radius: 2px;
+      display: none;
+      border-left: 3px solid #222;
+    }
+
+    .result-box.success {
+      display: block;
+      background: #e0e6dc;
+      color: #2d452d;
+      border-left-color: #5a7a5a;
+    }
+
+    .result-box.error {
+      display: block;
+      background: #ede0dc;
+      color: #6b3d3a;
+      border-left-color: #7a5a5a;
+    }
+
+    .result-box.warning {
+      display: block;
+      background: #f0ead8;
+      color: #6b5f3a;
+      border-left-color: #b5a56a;
+    }
+
+    .result-box a {
+      color: #5a6a7a;
+      text-decoration: underline;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      text-align: center;
+      padding: 20px 0 0;
+      color: #8a7f74;
+      font-size: 12px;
+      border-top: 1px solid #e0dad2;
+      margin-top: 16px;
+    }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 480px) {
+      #app { padding: 18px 14px 22px; }
+      .header h1 { font-size: 19px; }
+      .btn { padding: 8px 18px; font-size: 13px; }
+    }
   </style>
 </head>
 <body>
 <div id="app">
   <div class="header">
-    <h1>🚗 CarCare</h1>
-    <a href="admin.html" class="admin-link">⚙️ Admin</a>
+    <h1>CarCare</h1>
+    <a href="admin.html" class="admin-link">Admin</a>
   </div>
 
   <div id="reader"></div>
 
   <div class="controls">
-    <button id="startScanBtn" class="btn btn-primary">📷 QR scannen</button>
-    <button id="stopScanBtn" class="btn btn-secondary" style="display:none;">⏹ Stop</button>
+    <button id="startScanBtn" class="btn btn-primary">QR scannen</button>
+    <button id="stopScanBtn" class="btn btn-secondary" style="display:none;">Stop</button>
   </div>
 
   <div id="result" class="result-box"></div>
 
-  <div class="footer">© 2026 CarCare - PWA mit Firebase</div>
+  <div class="footer">© 2026 CarCare · PWA mit Firebase</div>
 </div>
 
 <!-- Firebase SDK -->
