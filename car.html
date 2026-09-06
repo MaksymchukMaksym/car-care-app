@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Інформація про установку</title>
+  <title>Anlagendetails</title>
   <link rel="manifest" href="manifest.json">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -11,6 +11,7 @@
     #app { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
     .back-btn { background: #e2e8f0; color: #333; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
     .back-btn:hover { background: #cbd5e0; }
+    h1 { margin-bottom: 20px; color: #1a1a2e; }
     .field { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
     .field .label { color: #666; }
     .field .value { font-weight: 600; }
@@ -28,25 +29,17 @@
     .msg { display: none; background: #d4edda; color: #155724; padding: 10px; border-radius: 8px; margin-top: 10px; }
     .msg.show { display: block; }
     .loading { text-align: center; padding: 40px 0; color: #666; }
-    .sync-status {
-      background: #e2e8f0;
-      padding: 8px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      display: inline-block;
-      margin-bottom: 15px;
-    }
-    .sync-status.online { background: #d4edda; color: #155724; }
-    .sync-status.offline { background: #f8d7da; color: #721c24; }
+    .drawing-btn { display: inline-block; margin-top: 15px; padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; font-weight: 500; }
+    .drawing-btn:hover { background: #5a67d8; transform: translateY(-2px); }
+    .section-title { font-size: 16px; font-weight: 600; color: #1a1a2e; margin: 15px 0 10px 0; padding-bottom: 5px; border-bottom: 2px solid #667eea; }
   </style>
 </head>
 <body>
 <div id="app">
-  <button onclick="location.href='index.html'" class="back-btn">← На головну</button>
-  <h1>🔧 Інформація</h1>
+  <button onclick="location.href='index.html'" class="back-btn">← Zurück</button>
+  <h1>Anlagendetails</h1>
 
-  <div id="syncStatus" class="sync-status">🔄 Синхронізація...</div>
-  <div id="info"><div class="loading">Завантаження...</div></div>
+  <div id="info"><div class="loading">Daten werden geladen...</div></div>
 </div>
 
 <!-- Firebase -->
@@ -55,88 +48,184 @@
 <script src="js/firebase-config.js"></script>
 
 <script>
-  // ==================== ОТРИМАННЯ ID ====================
+  // ============================================
+  // ID AUS URL
+  // ============================================
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id') || params.get('vin');
-  console.log('📌 ID з URL:', id);
+  console.log('ID aus URL:', id);
 
-  // ==================== ВІДОБРАЖЕННЯ ====================
-  async function render() {
+  // ============================================
+  // ANLAGE LADEN
+  // ============================================
+  async function loadInstallation() {
     const container = document.getElementById('info');
 
     if (!id) {
-      container.innerHTML = '<div class="loading">❌ ID не вказано</div>';
+      container.innerHTML = '<div class="loading">Keine ID angegeben</div>';
       return;
     }
 
-    const inst = await getInstallation(id);
-    if (!inst) {
-      container.innerHTML = `
-                    <div class="loading">
-                        ❌ Установку "${id}" не знайдено<br>
-                        <button onclick="location.href='admin.html'" class="back-btn" style="margin-top:15px;">Додати в адмін-панелі</button>
-                    </div>
-                `;
-      return;
+    try {
+      const doc = await db.collection('installations').doc(id).get();
+
+      if (!doc.exists) {
+        container.innerHTML = `
+          <div class="loading">
+            Anlage "${id}" nicht gefunden<br>
+            <button onclick="location.href='admin.html'" class="back-btn" style="margin-top:15px;">In Admin-Panel hinzufügen</button>
+          </div>
+        `;
+        return;
+      }
+
+      const data = doc.data();
+      renderInstallation(data);
+
+    } catch (error) {
+      console.error('Fehler:', error);
+      container.innerHTML = '<div class="loading">Fehler beim Laden: ' + error.message + '</div>';
     }
-
-    const status = getStatus(inst.filterDate);
-
-    container.innerHTML = `
-                <div class="field"><span class="label">ID</span><span class="value">${inst.id}</span></div>
-                <div class="field"><span class="label">Назва</span><span class="value">${inst.name}</span></div>
-                <div class="field"><span class="label">Модель</span><span class="value">${inst.model}</span></div>
-                <div class="field"><span class="label">Рік</span><span class="value">${inst.year}</span></div>
-                <div class="field"><span class="label">Створено</span><span class="value">${formatDate(inst.createdAt)}</span></div>
-
-                <div class="filter-section">
-                    <h3>🔄 Заміна фільтра</h3>
-                    <div class="field"><span class="label">Поточна дата</span><span class="value" id="filterDisplay">${inst.filterDate ? formatDate(inst.filterDate) : 'Не встановлено'}</span></div>
-                    <div class="field"><span class="label">Статус</span><span class="status ${status.class}">${status.text}</span></div>
-
-                    <div class="date-row">
-                        <input type="date" id="newDate" value="${inst.filterDate || ''}">
-                        <button onclick="updateFilter()">🔄 Оновити</button>
-                    </div>
-                    <div id="msg" class="msg">✅ Дату оновлено!</div>
-                </div>
-            `;
   }
 
-  // ==================== ОНОВЛЕННЯ ДАТИ ====================
+  // ============================================
+  // ANLAGE ANZEIGEN
+  // ============================================
+  function renderInstallation(data) {
+    var container = document.getElementById('info');
+
+    // Status des Filters
+    var status = getStatus(data.filterDate);
+
+    var html = '';
+
+    // === ALLGEMEINE INFORMATIONEN ===
+    html += '<div class="section-title">Allgemeine Informationen</div>';
+
+    var fields = [
+      { label: 'ID', key: 'id' },
+      { label: 'Name', key: 'name' },
+      { label: 'Projekt', key: 'project' },
+      { label: 'Marke', key: 'brand' },
+      { label: 'Modell', key: 'model' },
+      { label: 'Baujahr', key: 'year' },
+      { label: 'Herstellungsdatum', key: 'manufactureDate', type: 'date' }
+    ];
+
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      var val = data[f.key] || '-';
+      if (f.type === 'date' && val && val !== '-') {
+        var d = new Date(val);
+        val = d.toLocaleDateString('de-DE');
+      }
+      html += '<div class="field"><span class="label">' + f.label + '</span><span class="value">' + val + '</span></div>';
+    }
+
+    // === TECHNISCHE DATEN ===
+    html += '<div class="section-title">Technische Daten</div>';
+
+    var techFields = [
+      { label: 'Artikelnummer (Ang-Nr)', key: 'articleNumber' },
+      { label: 'LV-Pos', key: 'lvPos' },
+      { label: 'Leistung (m³/h)', key: 'capacity' },
+      { label: 'Gesamtgewicht (kg)', key: 'totalWeight' }
+    ];
+
+    for (var j = 0; j < techFields.length; j++) {
+      var tf = techFields[j];
+      var val2 = data[tf.key] || '-';
+      html += '<div class="field"><span class="label">' + tf.label + '</span><span class="value">' + val2 + '</span></div>';
+    }
+
+    // === VERANTWORTLICH & NOTIZEN ===
+    html += '<div class="section-title">Verantwortlich & Notizen</div>';
+
+    html += '<div class="field"><span class="label">Verantwortlicher</span><span class="value">' + (data.responsible || '-') + '</span></div>';
+    html += '<div class="field"><span class="label">Notizen</span><span class="value">' + (data.notes || '-') + '</span></div>';
+
+    // === FILTER ===
+    html += '<div class="filter-section">';
+    html += '<h3>Filterwechsel</h3>';
+    html += '<div class="field"><span class="label">Aktuelles Datum</span><span class="value" id="filterDisplay">' + (data.filterDate ? formatDate(data.filterDate) : 'Nicht festgelegt') + '</span></div>';
+    html += '<div class="field"><span class="label">Status</span><span class="status ' + status.class + '">' + status.text + '</span></div>';
+
+    html += '<div class="date-row">';
+    html += '<input type="date" id="newDate" value="' + (data.filterDate || '') + '">';
+    html += '<button onclick="updateFilter()">Aktualisieren</button>';
+    html += '</div>';
+    html += '<div id="msg" class="msg">Datum aktualisiert!</div>';
+    html += '</div>';
+
+    // === PDF ZEICHNUNG ===
+    html += '<div class="section-title">Zeichnung</div>';
+    html += '<button onclick="alert(\'PDF-Upload wird in nächster Version hinzugefügt\')" class="drawing-btn">📄 Zeichnung herunterladen</button>';
+
+    container.innerHTML = html;
+  }
+
+  // ============================================
+  // FILTERDATUM AKTUALISIEREN
+  // ============================================
   async function updateFilter() {
-    const date = document.getElementById('newDate').value;
-    if (!date) { alert('Виберіть дату'); return; }
+    var date = document.getElementById('newDate').value;
+    if (!date) {
+      alert('Bitte ein Datum auswählen');
+      return;
+    }
 
-    const inst = await getInstallation(id);
-    if (!inst) { alert('Установку не знайдено'); return; }
+    try {
+      var doc = await db.collection('installations').doc(id).get();
+      if (!doc.exists) {
+        alert('Anlage nicht gefunden');
+        return;
+      }
 
-    inst.filterDate = date;
-    inst.lastUpdate = new Date().toISOString();
+      var data = doc.data();
+      data.filterDate = date;
+      data.lastUpdate = new Date().toISOString();
 
-    await saveInstallation(inst);
+      await db.collection('installations').doc(id).set(data);
 
-    document.getElementById('msg').classList.add('show');
-    setTimeout(() => document.getElementById('msg').classList.remove('show'), 3000);
-    render();
+      document.getElementById('msg').classList.add('show');
+      setTimeout(function() {
+        document.getElementById('msg').classList.remove('show');
+      }, 3000);
+
+      loadInstallation();
+
+    } catch (error) {
+      console.error('Fehler:', error);
+      alert('Fehler: ' + error.message);
+    }
   }
 
-  // ==================== ДОПОМІЖНІ ====================
+  // ============================================
+  // HILFSFUNKTIONEN
+  // ============================================
   function getStatus(date) {
-    if (!date) return { text: '❓ Не встановлено', class: 'status-warning' };
-    const days = Math.floor((new Date() - new Date(date)) / (1000*60*60*24));
-    if (days < 0) return { text: '✅ Актуальний', class: 'status-good' };
-    if (days <= 30) return { text: `⚠️ ${days} днів тому`, class: 'status-warning' };
-    return { text: `🔴 ПОТРІБНА ЗАМІНА (${days} днів)`, class: 'status-danger' };
+    if (!date) {
+      return { text: 'Nicht festgelegt', class: 'status-warning' };
+    }
+    var days = Math.floor((new Date() - new Date(date)) / (1000 * 60 * 60 * 24));
+    if (days < 0) {
+      return { text: 'Aktuell', class: 'status-good' };
+    }
+    if (days <= 30) {
+      return { text: days + ' Tage her', class: 'status-warning' };
+    }
+    return { text: 'WECHSEL ERFORDERLICH (' + days + ' Tage)', class: 'status-danger' };
   }
 
   function formatDate(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('uk-UA');
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('de-DE');
   }
 
-  // ==================== ЗАПУСК ====================
-  document.addEventListener('DOMContentLoaded', render);
+  // ============================================
+  // START
+  // ============================================
+  document.addEventListener('DOMContentLoaded', loadInstallation);
 </script>
 </body>
 </html>
