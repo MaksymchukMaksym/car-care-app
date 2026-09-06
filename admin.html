@@ -108,7 +108,6 @@
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button onclick="generateQR()" class="btn btn-primary">🎯 Створити QR</button>
-      <button onclick="generateTestQR()" class="btn test-btn">🧪 Тестовий QR</button>
     </div>
 
     <div id="qrResult" class="qr-result">
@@ -128,6 +127,27 @@
     <div id="installationsList"></div>
   </div>
 </div>
+
+<script>
+  const ADMIN_PASSWORD = '123456';
+
+  function checkPassword() {
+    const input = prompt('Введіть пароль адміністратора:');
+    if (input !== ADMIN_PASSWORD) {
+      document.body.innerHTML = `
+        <div style="text-align:center;margin-top:100px;padding:40px;font-family:Arial;">
+          <h1 style="color:red;">ДОСТУП ЗАБОРОНЕНО</h1>
+          <p style="color:#666;margin-top:10px;">Невірний пароль.</p>
+          <button onclick="location.reload()" style="margin-top:20px;padding:10px 30px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;">Спробувати ще раз</button>
+        </div>
+      `;
+      return false;
+    }
+    return true;
+  }
+
+  checkPassword();
+</script>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>

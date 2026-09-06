@@ -21,10 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('startScanBtn').addEventListener('click', startScanner);
   document.getElementById('stopScanBtn').addEventListener('click', stopScanner);
 
-  // Ручне введення
-  document.getElementById('manualIdInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') openManual();
-  });
 
   // Перевірка URL
   const params = new URLSearchParams(window.location.search);
@@ -127,14 +123,3 @@ function showNotFound(id) {
   el.className = 'result-box warning';
 }
 
-async function openManual() {
-  const id = document.getElementById('manualIdInput').value.trim();
-  if (!id) { showResult('Введіть ID', 'error'); return; }
-
-  const inst = await getInstallation(id);
-  if (inst) {
-    window.location.href = `car.html?id=${encodeURIComponent(id)}`;
-  } else {
-    showNotFound(id);
-  }
-}

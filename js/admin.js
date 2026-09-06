@@ -152,11 +152,6 @@ async function generateQR() {
   }
 }
 
-function generateTestQR() {
-  const id = 'TEST-001';
-  currentQR = { id: id, name: 'Тестова установка' };
-  createQR(id);
-}
 
 function createQR(text) {
   const container = document.getElementById('qrCodeContainer');
