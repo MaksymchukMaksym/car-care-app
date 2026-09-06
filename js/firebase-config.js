@@ -2,14 +2,13 @@
 // КОНФІГУРАЦІЯ FIREBASE
 // ============================================
 
-// 🔑 ВСТАВТЕ СВОЮ КОНФІГУРАЦІЮ З FIREBASE CONSOLE
 const firebaseConfig = {
-  apiKey: "AIzaSyBzRZzqo8K45xYzE1x7ZzWxYzE1x7ZzWxY",  // ← ЗАМІНІТЬ НА СВІЙ
-  authDomain: "carcare-app.firebaseapp.com",         // ← ЗАМІНІТЬ НА СВІЙ
-  projectId: "carcare-app",                          // ← ЗАМІНІТЬ НА СВІЙ
-  storageBucket: "carcare-app.appspot.com",         // ← ЗАМІНІТЬ НА СВІЙ
-  messagingSenderId: "123456789",                   // ← ЗАМІНІТЬ НА СВІЙ
-  appId: "1:123456789:web:abcdef123456"             // ← ЗАМІНІТЬ НА СВІЙ
+  apiKey: "AIzaSyDqA568FmcYPvZWkM0wZx-avyilIIJcWtU",
+  authDomain: "carcare-app-83076.firebaseapp.com",
+  projectId: "carcare-app-83076",
+  storageBucket: "carcare-app-83076.firebasestorage.app",
+  messagingSenderId: "19462424604",
+  appId: "1:19462424604:web:50cb7450a5b9ec815d77d9"
 };
 
 // ============================================
